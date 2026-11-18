@@ -1,0 +1,1 @@
+"""Stream infrastructure adapters."""

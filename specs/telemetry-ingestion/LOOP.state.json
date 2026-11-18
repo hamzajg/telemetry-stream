@@ -1,0 +1,43 @@
+{
+  "feature": "telemetry-ingestion",
+  "status": "done",
+  "iterations": 0,
+  "updated": "2026-11-18T05:29:23Z",
+  "waves": {
+    "1": {
+      "status": "done",
+      "branch": "\u2014",
+      "pr": "#1",
+      "evidence": "evidence: .openharness/evidence/telemetry-ingestion/20261118T052810Z-dd2eda1 \u2014 wave 1 complete, 17/17 unit tests green",
+      "updated": "2026-11-18T05:28:57Z"
+    },
+    "2": {
+      "status": "done",
+      "branch": "\u2014",
+      "pr": "#2",
+      "evidence": "evidence: .openharness/evidence/telemetry-ingestion/20261118T052810Z-dd2eda1 \u2014 wave 2 complete, 4/4 integration tests gr",
+      "updated": "2026-11-18T05:28:57Z"
+    },
+    "3": {
+      "status": "done",
+      "branch": "\u2014",
+      "pr": "#3",
+      "evidence": "evidence: .openharness/evidence/telemetry-ingestion/20261118T052810Z-dd2eda1 \u2014 wave 3 complete, replay from bus offset p",
+      "updated": "2026-11-18T05:28:57Z"
+    }
+  },
+  "gates": {
+    "G1": {
+      "status": "met",
+      "evidence": "specs/telemetry-ingestion/DECISION-REVIEW.md (VERDICT: ACCEPT)",
+      "updated": "2026-11-18T05:28:00Z"
+    }
+  },
+  "events": [
+    "2026-11-18T05:28:00Z gate G1 met: specs/telemetry-ingestion/DECISION-REVIEW.md (VERDICT: ACCEPT)",
+    "2026-11-18T05:28:57Z complete wave 1 (#1): evidence: .openharness/evidence/telemetry-ingestion/20261118T052810Z-dd2eda1 \u2014 wave 1 complete, 17/17 unit tests green",
+    "2026-11-18T05:28:57Z complete wave 2 (#2): evidence: .openharness/evidence/telemetry-ingestion/20261118T052810Z-dd2eda1 \u2014 wave 2 complete, 4/4 integration tests gr",
+    "2026-11-18T05:28:57Z complete wave 3 (#3): evidence: .openharness/evidence/telemetry-ingestion/20261118T052810Z-dd2eda1 \u2014 wave 3 complete, replay from bus offset p",
+    "2026-11-18T05:29:23Z feature validated and shipped"
+  ]
+}
