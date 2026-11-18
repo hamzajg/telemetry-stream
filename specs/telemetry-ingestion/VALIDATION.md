@@ -8,7 +8,7 @@
 | 2 | Events for the same device are delivered in emission order | any ingestion instance can accept events for any device, events for the same device are delivered in emission order | 2 | test_kafka_bus.py |
 | 3 | An event failing schema validation is rejected with a typed… | event failing schema validation is rejected and not persisted, valid telemetry event is accepted with a per-device offset | 1 | (weak) test_domain.py, test_kafka_bus.py |
 | 4 | The ingestion service is stateless: any instance can accept… | any ingestion instance can accept events for any device, events for the same device are delivered in emission order | 2 | test_kafka_bus.py |
-| 5 | Stored events are replayable from the bus offset for… | stored events are replayable from a bus offset | 3 | (weak) test_kafka_bus.py |
+| 5 | Stored events are replayable from the bus offset for… | stored events are replayable from a bus offset | 3 | (weak) test_kafka_bus.py, test_lakehouse.py |
 
 ## Scenario coverage
 
