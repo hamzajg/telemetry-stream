@@ -94,6 +94,7 @@ class ProjectTelemetryTest(unittest.TestCase):
             clock=_FixedNow(datetime(2026, 1, 1, tzinfo=timezone.utc)),
         )
 
+    # Scenario: consumed telemetry event updates current device state
     def test_project_valid_event_advances_state(self) -> None:
         service = self._make_service()
         result = service.project(
@@ -136,6 +137,7 @@ class ProjectTelemetryTest(unittest.TestCase):
         self.assertEqual(state.latest_sequence, 1)
         self.assertEqual(state.latest_reading, {"reading_type": "gps", "value": 1.5})
 
+    # Scenario: consumer reads events in per-device emission order from Kafka
     def test_project_out_of_order_is_skipped(self) -> None:
         service = self._make_service()
         service.project(

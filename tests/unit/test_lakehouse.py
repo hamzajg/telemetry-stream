@@ -114,6 +114,7 @@ class WriteTelemetryTest(unittest.TestCase):
             clock=_FixedNow(datetime(2026, 1, 15, tzinfo=timezone.utc)),
         )
 
+    # Scenario: projected telemetry event is written to lakehouse partitioned by device_id and date
     def test_write_valid_event(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             service = self._make_service(tmp)
@@ -136,6 +137,7 @@ class WriteTelemetryTest(unittest.TestCase):
             )
             self.assertEqual(len(result.row_key), 16)
 
+    # Scenario: lakehouse writes are idempotent — replaying same offset does not duplicate
     def test_write_idempotent_skip_on_duplicate_offset(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             service = self._make_service(tmp)
@@ -159,6 +161,7 @@ class WriteTelemetryTest(unittest.TestCase):
             )
             self.assertFalse(result.written)  # skipped — same offset
 
+    # Scenario: Schema validation: event failing schema is not written to lakehouse
     def test_write_invalid_schema_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             service = self._make_service(tmp)
@@ -173,6 +176,44 @@ class WriteTelemetryTest(unittest.TestCase):
                     )
                 )
 
+    # Scenario: stored lakehouse rows are recoverable from a committed offset after restart
+    def test_rows_recoverable_from_committed_offset_after_restart(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            # First session: write rows for offsets 1..5
+            service = self._make_service(tmp)
+            for offset in range(1, 6):
+                service.write(
+                    WriteTelemetryCommand(
+                        device_id="device-42",
+                        sequence=offset,
+                        offset=offset,
+                        event_date="2026-01-15",
+                        payload={"reading_type": "gps", "value": float(offset)},
+                    )
+                )
+            # Simulate restart: new service instance, same underlying storage
+            restarted = WriteTelemetry(
+                storage=LocalLakehouseStorage(tmp),
+                catalog=LocalLakehouseCatalog(),
+                clock=_FixedNow(datetime(2026, 1, 15, tzinfo=timezone.utc)),
+            )
+            partition_path = "device_id=device-42/event_date=2026-01-15/"
+            # Rows at and after committed offset 3 are recoverable
+            for offset in (3, 4, 5):
+                row_key = LakehouseRow(
+                    device_id="device-42",
+                    sequence=offset,
+                    offset=offset,
+                    event_date="2026-01-15",
+                    payload={},
+                    written_at=datetime(2026, 1, 15, tzinfo=timezone.utc),
+                ).row_key()
+                self.assertTrue(
+                    restarted._storage.exists(partition_path, row_key),
+                    f"offset {offset} not recoverable after restart",
+                )
+
+    # Scenario: lakehouse writer is stateless — any instance can write any device
     def test_write_is_stateless_per_device(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             service = self._make_service(tmp)
