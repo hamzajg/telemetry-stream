@@ -16,3 +16,4 @@ obj/
 
 # OpenHarness local state (reconstructable)
 .sources-cache/
+.openharness/
