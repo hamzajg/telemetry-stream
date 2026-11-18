@@ -2,6 +2,7 @@
 
 | Feature | Stories | Scenarios | Waves | Planned | Validated |
 |---------|---------|-----------|-------|---------|-----------|
+| lakehouse-storage (`lakehouse-storage/`) | 5 | 4 | 3 | yes | yes |
 | stream-processing (`stream-processing/`) | 5 | 4 | 3 | yes | yes |
 | telemetry-ingestion (`telemetry-ingestion/`) | 5 | 5 | 3 | yes | yes |
 

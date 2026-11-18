@@ -1,0 +1,31 @@
+# Delivery Loop — lakehouse-storage
+
+Status: done
+Iterations: 1
+Updated: 2026-11-18T05:46:57Z
+
+| Wave | Status | Branch | PR | Evidence | Updated |
+|------|--------|--------|----|----------|---------|
+| 1 | done | feat/lakehouse-storage-w1 | #6 | evidence: .openharness/evidence/lakehouse-storage/20261118T053638Z-2c04800 — wave 1 complete, 9/9 unit tests green: AC1  | 2026-11-18T05:36:48Z |
+| 2 | done | feat/lakehouse-storage-w2 | #7 | evidence: .openharness/evidence/lakehouse-storage/20261118T053828Z-2c04800 — wave 2 complete, 2/2 integration tests pass | 2026-11-18T05:38:38Z |
+| 3 | done | feat/lakehouse-storage-w3 | #8 | evidence: .openharness/evidence/lakehouse-storage/20261118T053850Z-2c04800 — wave 3 complete, recovery from committed of | 2026-11-18T05:45:29Z |
+
+## Gates
+
+| Gate | Status | Evidence | Updated |
+|------|--------|----------|---------|
+| G1 | met | specs/lakehouse-storage/DECISION-REVIEW.md (VERDICT: ACCEPT) | 2026-11-18T05:33:11Z |
+| G2 | met | stream-processing feature merged to main: PR #4 (wave 2, Kafka bus adapter), PR #5 (wave 3, replay from offset). All 3 w | 2026-11-18T05:46:16Z |
+
+## Events
+
+- 2026-11-18T05:33:11Z gate G1 met: specs/lakehouse-storage/DECISION-REVIEW.md (VERDICT: ACCEPT)
+- 2026-11-18T05:33:28Z gate G2 met: stream-processing feature done on main (all 3 waves complete, all 5 ACs proven)
+- 2026-11-18T05:34:03Z start wave 1 on feat/lakehouse-storage-w1
+- 2026-11-18T05:36:48Z complete wave 1 (#6): evidence: .openharness/evidence/lakehouse-storage/20261118T053638Z-2c04800 — wave 1 complete, 9/9 unit tests green: AC1 
+- 2026-11-18T05:37:02Z start wave 2 on feat/lakehouse-storage-w2
+- 2026-11-18T05:38:38Z complete wave 2 (#7): evidence: .openharness/evidence/lakehouse-storage/20261118T053828Z-2c04800 — wave 2 complete, 2/2 integration tests pass
+- 2026-11-18T05:38:44Z start wave 3 on feat/lakehouse-storage-w3
+- 2026-11-18T05:45:29Z complete wave 3 (#8): evidence: .openharness/evidence/lakehouse-storage/20261118T053850Z-2c04800 — wave 3 complete, recovery from committed of
+- 2026-11-18T05:46:16Z gate G2 met: stream-processing feature merged to main: PR #4 (wave 2, Kafka bus adapter), PR #5 (wave 3, replay from offset). All 3 w
+- 2026-11-18T05:46:57Z feature validated and shipped

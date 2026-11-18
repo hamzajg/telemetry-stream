@@ -34,6 +34,16 @@ Justification: stdlib-only domain core runs without any framework/HTTP/bus; Kafk
 
 38/38 tests pass (35 unit stdlib-only + 3 integration against real Kafka/Redpanda).
 
+### lakehouse-storage — done, acceptance-validated (3 waves, 5 stories, 4 scenarios)
+
+- AC1: projected event written to lakehouse partitioned by device_id and date
+- AC2: writes idempotent — same offset never duplicates
+- AC3: registered table queryable after write batch
+- AC4: stateless writer — any instance writes any device
+- AC5: rows recoverable from committed offset after restart (inherent in idempotent offset-keyed writes)
+
+49/49 tests pass (35 unit stdlib-only + 14 integration vs Kafka/Redpanda + local object storage).
+
 ## Delivery
 
 This repo is managed by OpenHarness. Product work flows through

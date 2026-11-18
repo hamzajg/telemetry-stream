@@ -1,0 +1,33 @@
+# Gates: lakehouse-storage
+
+> Preconditions for phase transitions. Each `## G<n> — <title>` block is a
+> gate. `ship_loop` refuses to advance past a phase while a blocking gate is
+> pending. Definitions live here; status and evidence live in `LOOP.md`.
+>
+> Gate phases: `spec` (before writing the spec), `plan` (before planning
+> waves), `wave:<n>` (before starting wave n), `validate` (before validation),
+> `finish` (before closing the feature).
+>
+> Gate types: decision | artifact | external | technical | quality | data.
+> Resolver: `human` (needs a person to decide/provide something) or `agent`
+> (the agent can satisfy it). Check: `manual`, `file:<repo-relative-path>`, or
+> `command:<exact command>` (the agent runs it and records the output as
+> evidence — the oracle never executes it).
+
+## G1 — Design decisions challenged
+- Before: plan
+- Type: artifact
+- Owner: agent
+- Resolver: agent
+- Blocking: yes
+- Check: file:specs/lakehouse-storage/DECISION-REVIEW.md
+- Why: Every wave inherits the feature's architecture choices (persistence model, consistency, module boundaries, stateless vs stateful). The challenger review — alternatives, tradeoffs, testability — must exist before wave planning locks the design in. A human may waive this gate for genuinely trivial features.
+
+## G2 — Stream-processing feature must be complete before lakehouse storage
+- Before: plan
+- Type: external
+- Owner: human
+- Resolver: human
+- Blocking: yes
+- Check: manual
+- Why: The lakehouse writer consumes projected events from stream-processing; that feature must be merged to main first so the projection contract exists.
