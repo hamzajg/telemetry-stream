@@ -37,3 +37,9 @@ Feature: device-management
     When the registry is queried for active device count
     Then the count is 2
     And registration details for device "device-42" are returned
+
+  @w3
+  Scenario: credentials are loaded from environment variables
+    Given DEVICE_CREDENTIAL_key-1 is set to device-42
+    When the credential store looks up key-1
+    Then an active credential for device-42 is returned

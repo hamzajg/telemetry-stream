@@ -47,11 +47,35 @@ def _rpk(*args):
     )
 
 
+def _topic_exists(name: str) -> bool:
+    result = _rpk("topic", "describe", name)
+    return result.returncode == 0
+
+
+def _wait_for_topic_deleted(name: str, timeout: float = 15.0) -> None:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if not _topic_exists(name):
+            return
+        time.sleep(0.3)
+    raise TimeoutError(f"topic {name} was not deleted within {timeout}s")
+
+
+def _wait_for_topic_ready(name: str, partitions: int, timeout: float = 15.0) -> None:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        result = _rpk("topic", "describe", name)
+        if result.returncode == 0 and str(partitions) in result.stdout:
+            return
+        time.sleep(0.3)
+    raise TimeoutError(f"topic {name} not ready with {partitions} partitions within {timeout}s")
+
+
 def _create_topic(name: str) -> None:
     _rpk("topic", "delete", name)
-    time.sleep(0.5)
+    _wait_for_topic_deleted(name)
     _rpk("topic", "create", name, "--partitions", "3", "--replicas", "1")
-    time.sleep(1)
+    _wait_for_topic_ready(name, 3)
 
 
 def _topic_name(suffix: str) -> str:

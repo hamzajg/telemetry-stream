@@ -34,4 +34,10 @@ parse them. Write the story as: "As a <role>, I want <goal>, so that
 - Size: S
 - Notes: registry query
 
+## US6 — As a platform operator, I want credentials provisioned via environment variables, so that the system runs without in-memory doubles in production
+- Scenarios: @w3
+- Depends: US2
+- Size: S
+- Notes: env-var CredentialStore adapter
+
 Order stories by user value; dependencies express technical order only.
