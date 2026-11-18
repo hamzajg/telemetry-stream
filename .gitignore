@@ -1,0 +1,18 @@
+# Git
+*.pyc
+__pycache__/
+*.py[od]
+*.env
+.env.*
+!example.env
+.vscode/
+.idea/
+.DS_Store
+node_modules/
+target/
+bin/
+obj/
+*.log
+
+# OpenHarness local state (reconstructable)
+.sources-cache/
