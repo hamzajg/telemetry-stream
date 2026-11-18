@@ -2,13 +2,13 @@
 
 Status: running
 Iterations: 1
-Updated: 2026-11-18T09:33:20Z
+Updated: 2026-11-18T09:34:38Z
 
 | Wave | Status | Branch | PR | Evidence | Updated |
 |------|--------|--------|----|----------|---------|
 | 1 | done | feat/device-management-w1 | #3 | tests 22/22 green locally; PR #3 merged to main | 2026-11-18T06:23:25Z |
 | 2 | done | feat/device-management-w2 | #4 | tests 71/71 green locally; PR #4 opened, depends on PR #3 merged | 2026-11-18T06:25:31Z |
-| 3 | in-progress | feat/device-management-w3 | — | — | 2026-11-18T09:33:20Z |
+| 3 | done | feat/device-management-w3 | #7 | tests 77/77 unit + 9/9 integration green; PR #7 merged to main | 2026-11-18T09:34:38Z |
 
 ## Gates
 
@@ -27,3 +27,4 @@ Updated: 2026-11-18T09:33:20Z
 - 2026-11-18T06:25:31Z complete wave 2 (#4): tests 71/71 green locally; PR #4 opened, depends on PR #3 merged
 - 2026-11-18T06:26:25Z feature validated and shipped
 - 2026-11-18T09:33:20Z start wave 3 on feat/device-management-w3
+- 2026-11-18T09:34:38Z complete wave 3 (#7): tests 77/77 unit + 9/9 integration green; PR #7 merged to main
