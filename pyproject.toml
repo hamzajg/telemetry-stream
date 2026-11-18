@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "telemetry-stream"
+version = "0.1.0"
+description = "Realtime IoT telemetry ingestion: producers, durable bus, stream consumer, lakehouse."
+requires-python = ">=3.13"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+kafka = ["aiokafka>=0.11"]
+http = ["fastapi>=0.110", "uvicorn>=0.30"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
