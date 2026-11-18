@@ -44,6 +44,16 @@ Justification: stdlib-only domain core runs without any framework/HTTP/bus; Kafk
 
 49/49 tests pass (35 unit stdlib-only + 14 integration vs Kafka/Redpanda + local object storage).
 
+### device-management — done, acceptance-validated (2 waves, 5 stories, 5 scenarios)
+
+- AC1: registered device provisioned with credentials can produce telemetry
+- AC2: unregistered device rejected, cannot produce telemetry
+- AC3: revoked credential rejected even if previously valid
+- AC4: credential rotation invalidates old, activates new
+- AC5: device registry queryable — active count and registration details
+
+71/71 unit tests pass (stdlib-only, in-memory port doubles).
+
 ## Delivery
 
 This repo is managed by OpenHarness. Product work flows through
