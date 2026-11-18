@@ -67,6 +67,7 @@ no revocation path for compromised credentials.
 | 3 | A revoked credential is rejected even if previously valid | @w1 |
 | 4 | Credential rotation invalidates the old credential and activates the new one | @w1 |
 | 5 | Device registry is queryable: active device count and registration details | @w1 |
+| 6 | Credentials are loadable from environment variables | @w3 |
 
 ## Decisions
 

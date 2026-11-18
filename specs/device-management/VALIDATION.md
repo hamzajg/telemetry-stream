@@ -9,15 +9,17 @@
 | 3 | A revoked credential is rejected even if previously valid | registered device is provisioned with credentials and can produce telemetry | 1 | test_device_management.py |
 | 4 | Credential rotation invalidates the old credential and… | registered device is provisioned with credentials and can produce telemetry | 1 | test_device_management.py |
 | 5 | Device registry is queryable: active device count and… | registered device is provisioned with credentials and can produce telemetry | 1 | test_device_management.py |
+| 6 | Credentials are loadable from environment variables | credentials are loaded from environment variables | 3 | test_env_var_credential_store.py |
 
 ## Scenario coverage
 
-- Scenarios: 5 total, 5 with detected test evidence, 0 without
+- Scenarios: 6 total, 6 with detected test evidence, 0 without
 - ✓ `registered device is provisioned with credentials and can produce telemetry` (@w1)
 - ✓ `unregistered device is rejected and cannot produce telemetry` (@w2)
 - ✓ `revoked credential is rejected even if previously valid` (@w2)
 - ✓ `credential rotation invalidates old credential and activates new one` (@w2)
 - ✓ `device registry is queryable — active device count and registration details` (@w2)
+- ✓ `credentials are loaded from environment variables` (@w3)
 
 ## Demo script (manual walkthrough)
 

@@ -1,8 +1,8 @@
 {
   "feature": "device-management",
-  "status": "done",
+  "status": "running",
   "iterations": 1,
-  "updated": "2026-11-18T06:26:25Z",
+  "updated": "2026-11-18T09:33:20Z",
   "waves": {
     "1": {
       "status": "done",
@@ -17,6 +17,13 @@
       "pr": "#4",
       "evidence": "tests 71/71 green locally; PR #4 opened, depends on PR #3 merged",
       "updated": "2026-11-18T06:25:31Z"
+    },
+    "3": {
+      "status": "in-progress",
+      "branch": "feat/device-management-w3",
+      "pr": "\u2014",
+      "evidence": "\u2014",
+      "updated": "2026-11-18T09:33:20Z"
     }
   },
   "gates": {
@@ -38,6 +45,7 @@
     "2026-11-18T06:23:25Z complete wave 1 (#3): tests 22/22 green locally; PR #3 merged to main",
     "2026-11-18T06:23:30Z start wave 2 on feat/device-management-w2",
     "2026-11-18T06:25:31Z complete wave 2 (#4): tests 71/71 green locally; PR #4 opened, depends on PR #3 merged",
-    "2026-11-18T06:26:25Z feature validated and shipped"
+    "2026-11-18T06:26:25Z feature validated and shipped",
+    "2026-11-18T09:33:20Z start wave 3 on feat/device-management-w3"
   ]
 }

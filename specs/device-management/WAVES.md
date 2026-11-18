@@ -27,3 +27,12 @@ Scenarios proven by this wave:
 | US3 | As a security officer, I want to revoke a compromised credential, so that it is rejected even if previously valid | S | US1 | credential revocation |
 | US4 | As a platform operator, I want to rotate credentials, so that the old credential is invalidated and the new one activated | S | US1 | credential rotation |
 | US5 | As a platform operator, I want to query the device registry for active device count and registration details, so that I can audit the fleet | S | US1 | registry query |
+
+## Wave 3 — iteration 3
+
+Scenarios proven by this wave:
+- production infra adapters wired (env-var credential store, no in-memory doubles)
+
+| Item | Title | Size | Deps | Notes |
+|------|-------|------|------|-------|
+| US6 | As a platform operator, I want credentials provisioned via environment variables, so that the system runs without in-memory doubles in production | S | US2 | env-var CredentialStore adapter |
