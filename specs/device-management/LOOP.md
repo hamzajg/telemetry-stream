@@ -1,8 +1,8 @@
 # Delivery Loop — device-management
 
-Status: running
+Status: done
 Iterations: 1
-Updated: 2026-11-18T06:25:31Z
+Updated: 2026-11-18T06:26:25Z
 
 | Wave | Status | Branch | PR | Evidence | Updated |
 |------|--------|--------|----|----------|---------|
@@ -24,3 +24,4 @@ Updated: 2026-11-18T06:25:31Z
 - 2026-11-18T06:23:25Z complete wave 1 (#3): tests 22/22 green locally; PR #3 merged to main
 - 2026-11-18T06:23:30Z start wave 2 on feat/device-management-w2
 - 2026-11-18T06:25:31Z complete wave 2 (#4): tests 71/71 green locally; PR #4 opened, depends on PR #3 merged
+- 2026-11-18T06:26:25Z feature validated and shipped
