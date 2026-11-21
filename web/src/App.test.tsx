@@ -98,7 +98,7 @@ describe('TelemetryDashboard', () => {
     })
   })
 
-  it('highlights emergency-incident rows', async () => {
+  it('emergency-incident events surface as incidents are highlighted', async () => {
     mockFetch.mockImplementationOnce(async (url: string) => {
       if (String(url).includes('/v1/devices')) {
         return {
@@ -247,7 +247,7 @@ describe('DeviceRegistry', () => {
 })
 
 describe('ObservabilityPanel', () => {
-  it('renders observability header and metrics', async () => {
+  it('observability panel shows accept/reject counters and consumer lag', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: /observability/i }))
     await waitFor(() => {
