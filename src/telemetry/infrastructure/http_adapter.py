@@ -73,6 +73,8 @@ from telemetry.device.application.use_cases import (
     DeviceApplication,
     ProvisionCredentialRequest as CredentialProvisionRequest,
     RegisterDeviceRequest as DeviceRegisterRequest,
+    RevokeCredentialRequest as CredentialRevokeRequest,
+    RotateCredentialRequest as CredentialRotateRequest,
 )
 from telemetry.domain.exceptions import InvalidSchemaError
 from telemetry.domain.ports import TelemetryBus
@@ -111,6 +113,28 @@ class ProvisionCredentialOut(BaseModel):
     provisioned: bool
     device_id: str
     credential_id: str
+
+
+class RevokeCredential(BaseModel):
+    credential_id: str
+
+
+class RevokeCredentialOut(BaseModel):
+    revoked: bool
+    credential_id: str
+
+
+class RotateCredential(BaseModel):
+    device_id: str
+    old_credential_id: str
+    new_credential_id: str
+
+
+class RotateCredentialOut(BaseModel):
+    rotated: bool
+    device_id: str
+    old_credential_id: str
+    new_credential_id: str
 
 
 class TelemetryMetrics:
@@ -377,6 +401,38 @@ def create_app(
                 provisioned=result.provisioned,
                 device_id=result.device_id,
                 credential_id=result.credential_id,
+            )
+
+        @app.post("/v1/credentials/revoke")
+        async def revoke_credential(req: RevokeCredential) -> RevokeCredentialOut:
+            try:
+                result = credential_app.revoke_credential(
+                    CredentialRevokeRequest(credential_id=req.credential_id)
+                )
+            except Exception as exc:  # pragma: no cover - adapter boundary
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return RevokeCredentialOut(
+                revoked=result.revoked,
+                credential_id=result.credential_id,
+            )
+
+        @app.post("/v1/credentials/rotate")
+        async def rotate_credential(req: RotateCredential) -> RotateCredentialOut:
+            try:
+                result = credential_app.rotate_credential(
+                    CredentialRotateRequest(
+                        device_id=req.device_id,
+                        old_credential_id=req.old_credential_id,
+                        new_credential_id=req.new_credential_id,
+                    )
+                )
+            except Exception as exc:  # pragma: no cover - adapter boundary
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return RotateCredentialOut(
+                rotated=result.rotated,
+                device_id=result.device_id,
+                old_credential_id=result.old_credential_id,
+                new_credential_id=result.new_credential_id,
             )
 
     if metrics is not None:

@@ -494,6 +494,14 @@ class CredentialProvisionTest(unittest.TestCase):
             credential_app=self.credential_app,
         )
         self.client = TestClient(self.app)
+        # Provision a baseline credential for revoke/rotate tests
+        self.client.post(
+            "/v1/credentials/provision",
+            json={
+                "device_id": "device-42",
+                "credential_id": "cred-42",
+            },
+        )
 
     def test_provision_credential_for_registered_device(self) -> None:
         res = self.client.post(
@@ -515,6 +523,55 @@ class CredentialProvisionTest(unittest.TestCase):
             json={
                 "device_id": "device-99",
                 "credential_id": "cred-99",
+            },
+        )
+        self.assertEqual(res.status_code, 400)
+
+    def test_revoke_credential_succeeds(self) -> None:
+        res = self.client.post(
+            "/v1/credentials/revoke",
+            json={"credential_id": "cred-42"},
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data["revoked"])
+        self.assertEqual(data["credential_id"], "cred-42")
+
+    def test_revoke_unknown_credential_rejected(self) -> None:
+        res = self.client.post(
+            "/v1/credentials/revoke",
+            json={"credential_id": "cred-missing"},
+        )
+        self.assertEqual(res.status_code, 400)
+
+    def test_rotate_credential_invalidates_old_activates_new(self) -> None:
+        # Provision a fresh credential first since cred-42 may be revoked
+        self.client.post(
+            "/v1/credentials/provision",
+            json={"device_id": "device-42", "credential_id": "cred-old"},
+        )
+        res = self.client.post(
+            "/v1/credentials/rotate",
+            json={
+                "device_id": "device-42",
+                "old_credential_id": "cred-old",
+                "new_credential_id": "cred-new",
+            },
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data["rotated"])
+        self.assertEqual(data["device_id"], "device-42")
+        self.assertEqual(data["old_credential_id"], "cred-old")
+        self.assertEqual(data["new_credential_id"], "cred-new")
+
+    def test_rotate_unknown_old_credential_rejected(self) -> None:
+        res = self.client.post(
+            "/v1/credentials/rotate",
+            json={
+                "device_id": "device-42",
+                "old_credential_id": "cred-missing",
+                "new_credential_id": "cred-new",
             },
         )
         self.assertEqual(res.status_code, 400)
