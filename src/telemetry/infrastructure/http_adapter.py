@@ -141,7 +141,12 @@ def create_app(
             device_id: str | None = None,
             limit: int = 100,
         ) -> Dict[str, Any]:
-            events = bus.read(device_id, 1) if device_id is not None else []
+            if device_id is not None:
+                events = bus.read(device_id, 1)
+            else:
+                events = []
+                for did in bus.device_ids():
+                    events.extend(bus.read(did, 1))
             items = [
                 {
                     "device_id": e.device_id,
@@ -152,8 +157,6 @@ def create_app(
                 }
                 for i, e in enumerate(events[:limit])
             ]
-            if device_id is not None and events:
-                metrics.mark_consumed(device_id, len(events))
             return {"events": items, "count": len(items)}
 
     if device_app is not None:

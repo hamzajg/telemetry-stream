@@ -129,6 +129,50 @@ class HttpAdapterTest(unittest.TestCase):
         self.assertTrue(data["registered"])
         self.assertEqual(data["device_id"], "device-new")
 
+    def test_get_telemetry_all_devices(self) -> None:
+        bus = InMemoryTelemetryBus()
+        bus.append("device-42", TelemetryEvent(
+            device_id="device-42", sequence=1,
+            payload={"reading_type": "gps", "value": 1.0},
+            timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        ))
+        bus.append("device-99", TelemetryEvent(
+            device_id="device-99", sequence=1,
+            payload={"reading_type": "temp", "value": 2.0},
+            timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        ))
+
+        app = create_app(_FakeIngest(), bus=bus)
+        client = TestClient(app)
+
+        res = client.get("/v1/telemetry")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["count"], 2)
+        ids = [e["device_id"] for e in data["events"]]
+        self.assertIn("device-42", ids)
+        self.assertIn("device-99", ids)
+
+
+class InMemoryBusTestAdditional(unittest.TestCase):
+    def test_device_ids_returns_all_devices(self) -> None:
+        bus = InMemoryTelemetryBus()
+        bus.append("device-42", TelemetryEvent(
+            device_id="device-42", sequence=1,
+            payload={"reading_type": "gps", "value": 1.0},
+            timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        ))
+        bus.append("device-99", TelemetryEvent(
+            device_id="device-99", sequence=1,
+            payload={"reading_type": "temp", "value": 2.0},
+            timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        ))
+        self.assertEqual(bus.device_ids(), ["device-42", "device-99"])
+
+    def test_device_ids_empty_when_no_events(self) -> None:
+        bus = InMemoryTelemetryBus()
+        self.assertEqual(bus.device_ids(), [])
+
 
 class MetricsTest(unittest.TestCase):
     def test_snapshot_returns_counters(self) -> None:

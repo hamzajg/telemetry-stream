@@ -29,3 +29,7 @@ class InMemoryTelemetryBus(TelemetryBus):
     def read(self, device_id: str, from_offset: int) -> List[TelemetryEvent]:
         events = self._events.get(device_id, [])
         return [e for i, e in enumerate(events, start=1) if i >= from_offset]
+
+    def device_ids(self) -> list[str]:
+        """Return all device IDs that have events."""
+        return sorted(self._events.keys())
