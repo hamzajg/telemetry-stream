@@ -13,6 +13,17 @@ interface TelemetryResponse {
   count: number
 }
 
+interface Device {
+  device_id: string
+  registered_at: string
+  active: boolean
+}
+
+interface DevicesResponse {
+  active_count: number
+  devices: Device[]
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? ''
 
 function fetchEvents(deviceId?: string): Promise<TelemetryResponse> {
@@ -23,6 +34,19 @@ function fetchEvents(deviceId?: string): Promise<TelemetryResponse> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return res.json() as Promise<TelemetryResponse>
   })
+}
+
+function fetchDevices(): Promise<DevicesResponse> {
+  return fetch(`${API_BASE}/v1/devices`).then(async (res) => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return res.json() as Promise<DevicesResponse>
+  })
+}
+
+function isEmergencyIncident(event: TelemetryEvent): boolean {
+  return (
+    (event.payload as Record<string, unknown>)?.reading_type === 'emergency_incident'
+  )
 }
 
 function TelemetryDashboard() {
@@ -91,7 +115,10 @@ function TelemetryDashboard() {
             </tr>
           )}
           {filtered.map((event) => (
-            <tr key={`${event.device_id}-${event.sequence}`}>
+            <tr
+              key={`${event.device_id}-${event.sequence}`}
+              className={isEmergencyIncident(event) ? 'incident' : ''}
+            >
               <td>{event.offset}</td>
               <td>{event.device_id}</td>
               <td>{event.sequence}</td>
@@ -105,4 +132,97 @@ function TelemetryDashboard() {
   )
 }
 
-export default TelemetryDashboard
+function DeviceRegistry() {
+  const [devices, setDevices] = useState<Device[]>([])
+  const [activeCount, setActiveCount] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    fetchDevices()
+      .then((data) => {
+        setDevices(data.devices)
+        setActiveCount(data.active_count)
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  return (
+    <div className="dashboard">
+      <header>
+        <h1>Device Registry</h1>
+        <p>Registered devices and their status</p>
+      </header>
+
+      <div className="toolbar">
+        <button onClick={load} disabled={loading}>
+          {loading ? 'Loading…' : 'Refresh'}
+        </button>
+      </div>
+
+      {error && <div className="error">Error: {error}</div>}
+
+      <div className="summary">
+        <span>{activeCount} active device(s)</span>
+        <span>{devices.length} total</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Device</th>
+            <th>Registered At</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {devices.length === 0 && (
+            <tr>
+              <td colSpan={3}>No registered devices</td>
+            </tr>
+          )}
+          {devices.map((device) => (
+            <tr key={device.device_id} className={!device.active ? 'inactive' : ''}>
+              <td>{device.device_id}</td>
+              <td>{device.registered_at}</td>
+              <td>
+                {device.active ? 'Active' : 'Inactive'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+export default function App() {
+  const [view, setView] = useState<'telemetry' | 'devices'>('telemetry')
+
+  return (
+    <div className="app">
+      <nav>
+        <button
+          onClick={() => setView('telemetry')}
+          className={view === 'telemetry' ? 'active' : ''}
+        >
+          Telemetry
+        </button>
+        <button
+          onClick={() => setView('devices')}
+          className={view === 'devices' ? 'active' : ''}
+        >
+          Devices
+        </button>
+      </nav>
+      {view === 'telemetry' ? <TelemetryDashboard /> : <DeviceRegistry />}
+    </div>
+  )
+}

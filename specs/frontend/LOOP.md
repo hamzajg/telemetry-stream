@@ -2,12 +2,12 @@
 
 Status: running
 Iterations: 1
-Updated: 2026-11-21T11:14:01Z
+Updated: 2026-11-21T11:16:10Z
 
 | Wave | Status | Branch | PR | Evidence | Updated |
 |------|--------|--------|----|----------|---------|
 | 1 | done | feat/frontend-w1 | 6358d93 | tests 5/5 vitest pass, vite build green, GET /v1/telemetry added to FastAPI adapter, backend 79/79 tests pass | 2026-11-21T11:14:01Z |
-| 2 | pending | — | — | — | — |
+| 2 | in-progress | feat/frontend-w2 | — | — | 2026-11-21T11:16:10Z |
 | 3 | pending | — | — | — | — |
 
 ## Gates
@@ -23,3 +23,4 @@ Updated: 2026-11-21T11:14:01Z
 - 2026-11-21T11:04:17Z gate G1 met: specs/frontend/DECISION-REVIEW.md
 - 2026-11-21T11:06:59Z start wave 1 on feat/frontend-w1
 - 2026-11-21T11:14:01Z complete wave 1 (6358d93): tests 5/5 vitest pass, vite build green, GET /v1/telemetry added to FastAPI adapter, backend 79/79 tests pass
+- 2026-11-21T11:16:10Z start wave 2 on feat/frontend-w2

@@ -29,6 +29,10 @@ from telemetry.application.ingest import (
     IngestTelemetry,
     IngestTelemetryRequest,
 )
+from telemetry.device.application.use_cases import (
+    DeviceApplication,
+    RegisterDeviceRequest as DeviceRegisterRequest,
+)
 from telemetry.domain.exceptions import InvalidSchemaError
 from telemetry.domain.ports import TelemetryBus
 
@@ -40,14 +44,28 @@ class IngestEvent(BaseModel):
     timestamp: str | None = None
 
 
+class RegisterDeviceRequest(BaseModel):
+    device_id: str
+
+
+class DeviceOut(BaseModel):
+    device_id: str
+    registered_at: str
+    active: bool
+
+
 def create_app(
     ingest_telemetry: IngestTelemetry,
     bus: TelemetryBus | None = None,
+    device_app: DeviceApplication | None = None,
 ) -> Any:
     """Build the FastAPI app wired to the ingest use case.
 
     ``bus`` is optional; when provided, GET /v1/telemetry can read back
     stored events for dashboard display.
+
+    ``device_app`` is optional; when provided, device management endpoints
+    (GET /v1/devices, POST /v1/devices/register) are exposed.
     """
     if FastAPI is None:  # pragma: no cover
         raise RuntimeError("FastAPI is not installed")
@@ -94,5 +112,36 @@ def create_app(
                 for i, e in enumerate(events[:limit])
             ]
             return {"events": items, "count": len(items)}
+
+    if device_app is not None:
+
+        @app.get("/v1/devices")
+        async def list_devices() -> Dict[str, Any]:
+            result = device_app.query_devices()
+            return {
+                "active_count": result.active_count,
+                "devices": [
+                    {
+                        "device_id": d.device_id,
+                        "registered_at": d.registered_at.isoformat(),
+                        "active": d.active,
+                    }
+                    for d in result.devices
+                ],
+            }
+
+        @app.post("/v1/devices/register")
+        async def register_device(req: RegisterDeviceRequest) -> Dict[str, Any]:
+            try:
+                result = device_app.register_device(
+                    DeviceRegisterRequest(device_id=req.device_id)
+                )
+            except Exception as exc:  # pragma: no cover - adapter boundary
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return {
+                "registered": result.registered,
+                "device_id": result.device_id,
+                "active": result.active,
+            }
 
     return app
