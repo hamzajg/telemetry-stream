@@ -1,0 +1,27 @@
+{
+  "feature": "credential-provisioning",
+  "status": "running",
+  "iterations": 0,
+  "review": "required",
+  "updated": "2026-11-21T13:10:27Z",
+  "waves": {
+    "1": {
+      "status": "in-progress",
+      "branch": "feat/credential-provisioning-w1",
+      "pr": "\u2014",
+      "evidence": "\u2014",
+      "updated": "2026-11-21T13:10:27Z"
+    }
+  },
+  "gates": {
+    "G1": {
+      "status": "met",
+      "evidence": "specs/credential-provisioning/DECISION-REVIEW.md VERDICT: ACCEPT",
+      "updated": "2026-11-21T13:10:05Z"
+    }
+  },
+  "events": [
+    "2026-11-21T13:10:05Z gate G1 met: specs/credential-provisioning/DECISION-REVIEW.md VERDICT: ACCEPT",
+    "2026-11-21T13:10:27Z start wave 1 on feat/credential-provisioning-w1"
+  ]
+}

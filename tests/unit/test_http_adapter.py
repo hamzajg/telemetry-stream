@@ -9,7 +9,21 @@ from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 
 from telemetry.application.ingest import IngestTelemetry, IngestTelemetryRequest
-from telemetry.device.application.use_cases import DeviceApplication
+from telemetry.device.application.use_cases import (
+    CredentialApplication,
+    DeviceApplication,
+)
+from telemetry.device.domain.model import (
+    Credential,
+    DeviceManagement,
+)
+from telemetry.device.infrastructure.env_var_credential_store import (
+    EnvVarCredentialStore,
+)
+from telemetry.device.infrastructure.in_memory_registry import (
+    InMemoryCredentialStore,
+    InMemoryDeviceRegistry,
+)
 from telemetry.domain.exceptions import InvalidSchemaError
 from telemetry.domain.model import (
     IngestResult,
@@ -419,6 +433,91 @@ class RateLimitTest(unittest.TestCase):
             self.assertEqual(res3.status_code, 429)
         finally:
             del os.environ["TELEMETRY_RATE_LIMIT"]
+
+
+class CredentialStoreTest(unittest.TestCase):
+    def test_env_var_store_save_is_writable(self) -> None:
+        store = EnvVarCredentialStore()
+        cred = Credential(
+            credential_id="cred-42",
+            device_id="device-42",
+            active=True,
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            revoked_at=None,
+        )
+        store.save(cred)
+        got = store.get("cred-42")
+        self.assertIsNotNone(got)
+        self.assertEqual(got.device_id, "device-42")
+        self.assertTrue(got.active)
+
+    def test_env_var_store_get_falls_back_to_overlay(self) -> None:
+        store = EnvVarCredentialStore()
+        cred = Credential(
+            credential_id="cred-42",
+            device_id="device-42",
+            active=True,
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            revoked_at=None,
+        )
+        store.save(cred)
+        self.assertIsNotNone(store.get("cred-42"))
+
+
+class CredentialProvisionTest(unittest.TestCase):
+    def setUp(self) -> None:
+        from datetime import datetime, timezone
+
+        clock = FixedClock(datetime(2026, 1, 1, tzinfo=timezone.utc))
+        registry = InMemoryDeviceRegistry()
+        credentials = InMemoryCredentialStore()
+        device_management = DeviceManagement(
+            registry=registry, credentials=credentials, clock=clock
+        )
+        registry.save(
+            type(
+                "Device",
+                (),
+                {
+                    "device_id": "device-42",
+                    "registered_at": datetime(2026, 1, 1, tzinfo=timezone.utc),
+                    "active": True,
+                },
+            )()
+        )
+        self.credential_app = CredentialApplication(
+            device_management=device_management
+        )
+        self.app = create_app(
+            _FakeIngest(),
+            bus=InMemoryTelemetryBus(),
+            credential_app=self.credential_app,
+        )
+        self.client = TestClient(self.app)
+
+    def test_provision_credential_for_registered_device(self) -> None:
+        res = self.client.post(
+            "/v1/credentials/provision",
+            json={
+                "device_id": "device-42",
+                "credential_id": "cred-42",
+            },
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data["provisioned"])
+        self.assertEqual(data["device_id"], "device-42")
+        self.assertEqual(data["credential_id"], "cred-42")
+
+    def test_provision_credential_for_unregistered_device_rejected(self) -> None:
+        res = self.client.post(
+            "/v1/credentials/provision",
+            json={
+                "device_id": "device-99",
+                "credential_id": "cred-99",
+            },
+        )
+        self.assertEqual(res.status_code, 400)
 
 
 if __name__ == "__main__":

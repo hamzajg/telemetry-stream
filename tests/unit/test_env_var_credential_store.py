@@ -49,10 +49,12 @@ class EnvVarCredentialStoreTest(unittest.TestCase):
         self._env_keys.append("DEVICE_CREDENTIAL_empty")
         self.assertIsNone(self._store.get("empty"))
 
-    def test_save_raises_not_implemented(self) -> None:
+    def test_save_persists_credential(self) -> None:
         credential = Credential.create("key-9", "device-42")
-        with self.assertRaises(NotImplementedError):
-            self._store.save(credential)
+        self._store.save(credential)
+        got = self._store.get("key-9")
+        self.assertIsNotNone(got)
+        self.assertEqual(got.device_id, "device-42")
 
     def test_get_case_sensitive_credential_id(self) -> None:
         self._set_env("Key-1", "device-42")

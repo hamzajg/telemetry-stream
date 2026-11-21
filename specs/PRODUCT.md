@@ -5,6 +5,7 @@
 | device-management (`device-management/`) | 6 | 6 | 3 | yes | yes |
 | frontend (`frontend/`) | 5 | 5 | 3 | yes | yes |
 | lakehouse-storage (`lakehouse-storage/`) | 5 | 4 | 3 | yes | yes |
+| live-updates (`live-updates/`) | 2 | 3 | 2 | yes | yes |
 | stream-processing (`stream-processing/`) | 5 | 4 | 3 | yes | yes |
 | telemetry-ingestion (`telemetry-ingestion/`) | 5 | 5 | 3 | yes | yes |
 
