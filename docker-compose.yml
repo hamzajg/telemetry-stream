@@ -1,0 +1,23 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8001:8000"
+    environment:
+      - TELEMETRY_API_KEY=${TELEMETRY_API_KEY:-}
+      - TELEMETRY_RATE_LIMIT=${TELEMETRY_RATE_LIMIT:-100}
+    restart: unless-stopped
+
+  frontend:
+    image: node:24-alpine
+    working_dir: /app
+    volumes:
+      - ./web:/app
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE=http://127.0.0.1:8001
+    depends_on:
+      - api
+    restart: unless-stopped

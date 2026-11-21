@@ -89,6 +89,9 @@ function TelemetryDashboard() {
   const [deviceFilter, setDeviceFilter] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [wsConnected, setWsConnected] = useState(false)
+
+  const wsUrl = API_BASE ? `${API_BASE.replace(/^http/, 'ws')}/v1/ws/telemetry` : ''
 
   const load = useCallback(() => {
     setLoading(true)
@@ -102,6 +105,43 @@ function TelemetryDashboard() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    if (typeof WebSocket === 'undefined' || !wsUrl) {
+      return
+    }
+    let ws: WebSocket | null = null
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+
+    const connect = () => {
+      ws = new WebSocket(wsUrl)
+      ws.onopen = () => setWsConnected(true)
+      ws.onclose = () => {
+        setWsConnected(false)
+        reconnectTimer = setTimeout(connect, 2000)
+      }
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data)
+          if (msg.type === 'telemetry') {
+            setEvents((prev) => [msg, ...prev])
+          }
+        } catch {
+          // ignore malformed messages
+        }
+      }
+      ws.onerror = () => {
+        ws?.close()
+      }
+    }
+
+    connect()
+
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      ws?.close()
+    }
+  }, [wsUrl])
 
   const handleSeed = () => {
     const now = new Date().toISOString()
@@ -134,6 +174,9 @@ function TelemetryDashboard() {
       </header>
 
       <div className="toolbar">
+        <span className={`ws-status ${wsConnected ? 'live' : 'offline'}`}>
+          {wsConnected ? '● Live' : '○ Offline'}
+        </span>
         <input
           type="text"
           placeholder="Filter by device id"

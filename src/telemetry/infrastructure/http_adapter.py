@@ -2,16 +2,28 @@
 
 Thin adapter: parses HTTP, delegates to the application use case, returns
 HTTP responses. Contains no business rules.
+
+Adds production hardening:
+- WebSocket /v1/ws/telemetry broadcasting newly ingested events to live clients
+- API key authentication (X-API-Key header, TELEMETRY_API_KEY env var; dev mode
+  when unset)
+- Fixed-window rate limiting per client IP (TELEMETRY_RATE_LIMIT env var,
+  requests per minute; dev mode unlimited when unset)
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict
+import os
+import time
+from collections import defaultdict
+from typing import Any, Dict, Set
 
 try:  # FastAPI is optional; the domain core does not depend on it
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
     from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.security import APIKeyHeader
     from pydantic import BaseModel
+    from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_429_TOO_MANY_REQUESTS
 except Exception:  # pragma: no cover - FastAPI may be absent in test envs
     FastAPI = None  # type: ignore
 
@@ -25,9 +37,29 @@ except Exception:  # pragma: no cover - FastAPI may be absent in test envs
             self.status_code = status_code
             self.detail = detail
 
+    class WebSocket:  # type: ignore
+        async def accept(self) -> None:
+            pass
+
+        async def send_text(self, data: str) -> None:
+            pass
+
+        async def close(self) -> None:
+            pass
+
+    class WebSocketDisconnect(Exception):  # type: ignore
+        pass
+
     class CORSMiddleware:  # type: ignore
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             pass
+
+    class APIKeyHeader:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+    HTTP_401_UNAUTHORIZED = 401  # type: ignore
+    HTTP_429_TOO_MANY_REQUESTS = 429  # type: ignore
 
 
 from datetime import datetime, timezone
@@ -101,6 +133,52 @@ class TelemetryMetrics:
         }
 
 
+class ConnectionManager:
+    """Manages WebSocket connections for live telemetry broadcast."""
+
+    def __init__(self) -> None:
+        self.active: Set[WebSocket] = set()
+
+    async def connect(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+        self.active.add(websocket)
+
+    def disconnect(self, websocket: WebSocket) -> None:
+        self.active.discard(websocket)
+
+    async def broadcast(self, message: Dict[str, Any]) -> None:
+        import json
+
+        text = json.dumps(message)
+        dead: list[WebSocket] = []
+        for ws in list(self.active):
+            try:
+                await ws.send_text(text)
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            self.disconnect(ws)
+
+
+class RateLimiter:
+    """Fixed-window rate limiter keyed by client IP."""
+
+    def __init__(self, limit: int | None) -> None:
+        self.limit = limit
+        self._windows: dict[str, tuple[float, int]] = {}
+
+    def is_allowed(self, client_id: str) -> bool:
+        if self.limit is None:
+            return True
+        now = time.time()
+        window_start, count = self._windows.get(client_id, (now, 0))
+        if now - window_start >= 60.0:
+            window_start, count = now, 0
+        count += 1
+        self._windows[client_id] = (window_start, count)
+        return count <= self.limit
+
+
 def create_app(
     ingest_telemetry: IngestTelemetry,
     bus: TelemetryBus | None = None,
@@ -110,7 +188,7 @@ def create_app(
     """Build the FastAPI app wired to the ingest use case.
 
     ``bus`` is optional; when provided, GET /v1/telemetry can read back
-    stored events for dashboard display.
+    stored events for dashboard display and WebSocket broadcast works.
 
     ``device_app`` is optional; when provided, device management endpoints
     (GET /v1/devices, POST /v1/devices/register) are exposed.
@@ -132,6 +210,35 @@ def create_app(
     if metrics is None:
         metrics = TelemetryMetrics()
 
+    # Production hardening knobs (env-driven, dev-friendly defaults)
+    api_key = os.environ.get("TELEMETRY_API_KEY")
+    rate_limit_raw = os.environ.get("TELEMETRY_RATE_LIMIT")
+    rate_limit = int(rate_limit_raw) if rate_limit_raw else None
+    limiter = RateLimiter(rate_limit)
+    manager = ConnectionManager()
+
+    @app.middleware("http")
+    async def auth_and_rate_limit(request, call_next):
+        client_id = request.client.host if request.client else "unknown"
+        if not limiter.is_allowed(client_id):
+            from starlette.responses import JSONResponse
+
+            return JSONResponse(
+                status_code=HTTP_429_TOO_MANY_REQUESTS,
+                content={"detail": "rate limit exceeded"},
+            )
+        expected = os.environ.get("TELEMETRY_API_KEY")
+        if expected:
+            provided = request.headers.get("x-api-key", "")
+            if provided != expected:
+                from starlette.responses import JSONResponse
+
+                return JSONResponse(
+                    status_code=HTTP_401_UNAUTHORIZED,
+                    content={"detail": "invalid or missing API key"},
+                )
+        return await call_next(request)
+
     @app.post("/v1/telemetry")
     async def ingest(event: IngestEvent) -> Dict[str, Any]:
         try:
@@ -147,13 +254,26 @@ def create_app(
             metrics.record_reject()
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         metrics.record_accept()
-        return {
+        payload = {
             "accepted": result.accepted,
             "event_id": result.event_id,
             "offset": result.offset,
             "device_id": result.device_id,
             "sequence": result.sequence,
         }
+        # Broadcast newly accepted event to live WebSocket clients
+        if bus is not None and result.accepted:
+            await manager.broadcast(
+                {
+                    "type": "telemetry",
+                    "device_id": result.device_id,
+                    "sequence": result.sequence,
+                    "payload": event.payload,
+                    "timestamp": event.timestamp,
+                    "offset": result.offset,
+                }
+            )
+        return payload
 
     if bus is not None:
 
@@ -179,6 +299,18 @@ def create_app(
                 for i, e in enumerate(events[:limit])
             ]
             return {"events": items, "count": len(items)}
+
+        @app.websocket("/v1/ws/telemetry")
+        async def ws_telemetry(websocket: WebSocket) -> None:
+            await manager.connect(websocket)
+            try:
+                while True:
+                    # Keep the connection alive; ignore client messages
+                    await websocket.receive_text()
+            except WebSocketDisconnect:
+                pass
+            finally:
+                manager.disconnect(websocket)
 
     if device_app is not None:
 
@@ -217,8 +349,6 @@ def create_app(
         async def get_metrics() -> Dict[str, Any]:
             lag_by_device: dict[str, int] = {}
             if bus is not None:
-                # Read all devices' events to compute latest offset per device
-                # For simplicity, compute lag for devices that have been consumed
                 for device_id in metrics._consumed_offset:
                     events = bus.read(device_id, 1)
                     latest = len(events)

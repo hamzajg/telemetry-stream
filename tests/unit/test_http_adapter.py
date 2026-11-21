@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import unittest
 from datetime import datetime, timezone
 
@@ -286,6 +287,107 @@ class SeedTest(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertEqual(data["count"], 2)
+
+
+class WebSocketTest(unittest.TestCase):
+    def test_websocket_receives_ingested_event(self) -> None:
+        from telemetry.infrastructure.json_schema_adapter import (
+            JsonSchemaAdapter as IngestSchema,
+        )
+
+        clock = FixedClock(datetime(2026, 1, 1, tzinfo=timezone.utc))
+        bus = InMemoryTelemetryBus()
+        ingestion = TelemetryIngestion(bus=bus, schema=IngestSchema(), clock=clock)
+        ingest_telemetry = IngestTelemetry(ingestion=ingestion, clock=clock)
+
+        app = create_app(ingest_telemetry, bus=bus)
+        client = TestClient(app)
+
+        with client.websocket_connect("/v1/ws/telemetry") as ws:
+            res = client.post(
+                "/v1/telemetry",
+                json={
+                    "device_id": "device-42",
+                    "sequence": 1,
+                    "payload": {"reading_type": "temperature", "value": 22.5},
+                    "timestamp": "2026-01-01T00:00:00+00:00",
+                },
+            )
+            self.assertEqual(res.status_code, 200)
+            msg = ws.receive_json()
+            self.assertEqual(msg["type"], "telemetry")
+            self.assertEqual(msg["device_id"], "device-42")
+            self.assertEqual(msg["sequence"], 1)
+
+
+class AuthTest(unittest.TestCase):
+    def test_api_key_required_when_configured(self) -> None:
+        import os
+
+        os.environ["TELEMETRY_API_KEY"] = "test-secret"
+        try:
+            from telemetry.infrastructure.json_schema_adapter import (
+                JsonSchemaAdapter as IngestSchema,
+            )
+
+            clock = FixedClock(datetime(2026, 1, 1, tzinfo=timezone.utc))
+            bus = InMemoryTelemetryBus()
+            ingestion = TelemetryIngestion(bus=bus, schema=IngestSchema(), clock=clock)
+            ingest_telemetry = IngestTelemetry(ingestion=ingestion, clock=clock)
+
+            app = create_app(ingest_telemetry, bus=bus)
+            client = TestClient(app)
+
+            res = client.post(
+                "/v1/telemetry",
+                json={
+                    "device_id": "device-42",
+                    "sequence": 1,
+                    "payload": {"reading_type": "temperature", "value": 22.5},
+                },
+            )
+            self.assertEqual(res.status_code, 401)
+
+            res = client.post(
+                "/v1/telemetry",
+                json={
+                    "device_id": "device-42",
+                    "sequence": 1,
+                    "payload": {"reading_type": "temperature", "value": 22.5},
+                },
+                headers={"X-API-Key": "test-secret"},
+            )
+            self.assertEqual(res.status_code, 200)
+        finally:
+            del os.environ["TELEMETRY_API_KEY"]
+
+
+class RateLimitTest(unittest.TestCase):
+    def test_rate_limit_exceeded(self) -> None:
+        import os
+
+        os.environ["TELEMETRY_RATE_LIMIT"] = "2"
+        try:
+            from telemetry.infrastructure.json_schema_adapter import (
+                JsonSchemaAdapter as IngestSchema,
+            )
+
+            clock = FixedClock(datetime(2026, 1, 1, tzinfo=timezone.utc))
+            bus = InMemoryTelemetryBus()
+            ingestion = TelemetryIngestion(bus=bus, schema=IngestSchema(), clock=clock)
+            ingest_telemetry = IngestTelemetry(ingestion=ingestion, clock=clock)
+
+            app = create_app(ingest_telemetry, bus=bus)
+            client = TestClient(app)
+
+            res1 = client.get("/v1/metrics")
+            self.assertEqual(res1.status_code, 200)
+            res2 = client.get("/v1/metrics")
+            self.assertEqual(res2.status_code, 200)
+            res3 = client.get("/v1/metrics")
+            self.assertEqual(res3.status_code, 429)
+        finally:
+            del os.environ["TELEMETRY_RATE_LIMIT"]
 
 
 if __name__ == "__main__":

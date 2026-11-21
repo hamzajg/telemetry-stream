@@ -212,6 +212,40 @@ describe('TelemetryDashboard', () => {
       expect(screen.getByText(/error: network error/i)).toBeInTheDocument()
     })
   })
+
+  it('shows WebSocket offline status when no API base configured', () => {
+    render(<App />)
+    expect(screen.getByText('○ Offline')).toBeInTheDocument()
+  })
+
+  it('seed button calls /v1/seed and reloads events', async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ events: [], count: 0 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ accepted: 4, rejected: 0, total: 4 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ events: [], count: 0 }),
+      })
+
+    render(<App />)
+    await waitFor(() => {
+      expect(screen.getByText('○ Offline')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /seed demo data/i }))
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/v1/seed'),
+        expect.objectContaining({ method: 'POST' })
+      )
+    })
+  })
 })
 
 describe('DeviceRegistry', () => {

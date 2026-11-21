@@ -77,6 +77,38 @@ header p {
   cursor: not-allowed;
 }
 
+.ws-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 12px;
+}
+
+.ws-status.live {
+  color: #16a34a;
+}
+
+.ws-status.offline {
+  color: #9ca3af;
+}
+
+.ws-status::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.ws-status.live::before {
+  opacity: 1;
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.6);
+}
+
 .error {
   padding: 12px;
   background: #fee2e2;
