@@ -50,6 +50,15 @@ runtime — only out-of-band via environment variables before deploy.
   swappable for a secret manager later.
 - Observability: credentials provisioned/revoked/rotated counts.
 
+### In-scope paths
+
+- `src/telemetry/device/infrastructure/env_var_credential_store.py` — writable CredentialStore.save with in-memory overlay
+- `src/telemetry/device/application/use_cases.py` — CredentialApplication.provision/revoke/rotate methods
+- `src/telemetry/infrastructure/http_adapter.py` — POST /v1/credentials/provision/revoke/rotate endpoints
+- `src/telemetry/serve.py` — credential_app wiring in build_stack
+- `tests/unit/test_http_adapter.py` — CredentialProvisionTest (provision/revoke/rotate)
+- `tests/unit/test_env_var_credential_store.py` — writable store tests
+
 ## Scope (out)
 
 - Credential distribution to devices (out-of-band) — later feature.
