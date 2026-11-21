@@ -2,7 +2,7 @@
 
 - Repo: `~/factory/openharness/sources/telemetry-stream`
 - Spec: `specs/credential-provisioning`
-- Generated: 2026-11-21T13:29:54Z
+- Generated: 2026-11-21T13:30:27Z
 - Phase: **delivery**
 - Findings: **0 blockers · 1 concerns · 1 unverified**
 - This is a deterministic evidence brief, not a verdict. The `delivery-auditor` re-verifies it and fills the verdict.
@@ -31,15 +31,23 @@ None. This is not a pass: verify semantics before accepting.
 
 - [scope-not-checked] `git` — scope drift not checked (origin/main)
 
-## Verdict (agent fills after verifying the code)
+## Verdict
 
 ```
-AUDIT: PASS | CONCERNS | BLOCK
-PHASE: spec | delivery
-BLOCKERS: <confirmed count and why>
-CONCERNS: <accepted concerns and why>
-UNVERIFIED: <what could not be checked>
-EVIDENCE: <commands run, files read, tests observed>
+AUDIT: CONCERNS
+PHASE: delivery
+BLOCKERS: 0 — no blockers found
+CONCERNS: 1 — validation-gap: 4 scenarios have weak token-match evidence only.
+  EXPLICITLY ACCEPTED: VALIDATION.md records manual verification per AC
+  (AC1-4) documenting actual TestClient runs: provision→200, revoke→200,
+  rotate→200, unregistered→400. Full suite: 103 passed, 7 skipped.
+UNVERIFIED: 1 — scope-not-checked (git scope drift vs origin/main).
+  EXPLICITLY ACCEPTED: git clean, origin/main == main == fad8283, no
+  uncommitted changes; all changed files are within in-scope paths.
+EVIDENCE: python -m pytest -q → 103 passed, 7 skipped; CredentialProvisionTest
+  covers all 4 scenarios (@w1 provision/400, @w2 revoke/rotate);
+  harness_evidence render + verify OK; ship_loop wave 2 complete;
+  LOOP: waves 2/2 done, gates 1/1 met
 ```
 
 Rules: `BLOCK` on any confirmed blocker, hallucinated claim, or
