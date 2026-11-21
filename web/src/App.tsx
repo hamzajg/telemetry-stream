@@ -90,8 +90,11 @@ function TelemetryDashboard() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
+  const [wsReconnecting, setWsReconnecting] = useState(false)
 
-  const wsUrl = API_BASE ? `${API_BASE.replace(/^http/, 'ws')}/v1/ws/telemetry` : ''
+  const wsUrl = API_BASE
+    ? `${API_BASE.replace(/^http/, 'ws')}/v1/ws/telemetry`
+    : '/v1/ws/telemetry'
 
   const load = useCallback(() => {
     setLoading(true)
@@ -114,10 +117,15 @@ function TelemetryDashboard() {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
     const connect = () => {
+      setWsReconnecting(false)
       ws = new WebSocket(wsUrl)
-      ws.onopen = () => setWsConnected(true)
+      ws.onopen = () => {
+        setWsConnected(true)
+        setWsReconnecting(false)
+      }
       ws.onclose = () => {
         setWsConnected(false)
+        setWsReconnecting(true)
         reconnectTimer = setTimeout(connect, 2000)
       }
       ws.onmessage = (event) => {
@@ -174,8 +182,8 @@ function TelemetryDashboard() {
       </header>
 
       <div className="toolbar">
-        <span className={`ws-status ${wsConnected ? 'live' : 'offline'}`}>
-          {wsConnected ? '● Live' : '○ Offline'}
+        <span className={`ws-status ${wsReconnecting ? 'reconnecting' : wsConnected ? 'live' : 'offline'}`}>
+          {wsReconnecting ? '⟳ Reconnecting…' : wsConnected ? '● Live' : '○ Offline'}
         </span>
         <input
           type="text"

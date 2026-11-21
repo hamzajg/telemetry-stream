@@ -109,6 +109,16 @@ header p {
   box-shadow: 0 0 8px rgba(22, 163, 74, 0.6);
 }
 
+.ws-status.reconnecting {
+  color: #d97706;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .error {
   padding: 12px;
   background: #fee2e2;

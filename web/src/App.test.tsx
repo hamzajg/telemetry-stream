@@ -1,13 +1,50 @@
 /// <reference types="vitest" />
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import '@testing-library/jest-dom/vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import App from './App'
 
 const mockFetch = vi.fn()
 
+// Mock WebSocket for live-updates tests
+class MockWebSocket {
+  static instances: MockWebSocket[] = []
+  onopen: ((e: Event) => void) | null = null
+  onclose: ((e: Event) => void) | null = null
+  onmessage: ((e: MessageEvent) => void) | null = null
+  readyState = 1
+  send = vi.fn()
+  close = vi.fn()
+
+  constructor(_url: string) {
+    MockWebSocket.instances.push(this)
+    setTimeout(() => {
+      this.onopen?.(new Event('open'))
+    }, 0)
+  }
+
+  static triggerMessage(data: string) {
+    MockWebSocket.instances.forEach((ws) => {
+      ws.onmessage?.(new MessageEvent('message', { data }))
+    })
+  }
+
+  static triggerClose() {
+    MockWebSocket.instances.forEach((ws) => {
+      ws.onclose?.(new Event('close'))
+    })
+  }
+
+  static clear() {
+    MockWebSocket.instances = []
+  }
+}
+
+;(globalThis as any).WebSocket = MockWebSocket
+
 beforeEach(() => {
   mockFetch.mockReset()
+  MockWebSocket.clear()
   mockFetch.mockImplementation(async (url: string) => {
     if (String(url).includes('/v1/devices')) {
       return {
@@ -244,6 +281,85 @@ describe('TelemetryDashboard', () => {
         expect.stringContaining('/v1/seed'),
         expect.objectContaining({ method: 'POST' })
       )
+    })
+  })
+
+  it('WebSocket connects and shows live status', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ events: [], count: 0 }),
+    })
+    render(<App />)
+    await waitFor(() => {
+      expect(screen.getByText('● Live')).toBeInTheDocument()
+    })
+  })
+
+  it('WebSocket disconnect keeps events and reconnects', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        events: [
+          {
+            device_id: 'device-42',
+            sequence: 1,
+            payload: { reading_type: 'temperature', value: 22.5 },
+            timestamp: '2026-01-01T00:00:00Z',
+            offset: 1,
+          },
+        ],
+        count: 1,
+      }),
+    })
+    render(<App />)
+    await waitFor(() => {
+      expect(screen.getByText('device-42')).toBeInTheDocument()
+      expect(screen.getByText('● Live')).toBeInTheDocument()
+    })
+
+    // Simulate disconnect
+    await act(async () => {
+      MockWebSocket.triggerClose()
+    })
+    await waitFor(() => {
+      expect(screen.getByText('⟳ Reconnecting…')).toBeInTheDocument()
+    })
+    // Events remain visible
+    expect(screen.getByText('device-42')).toBeInTheDocument()
+
+    // Simulate reconnect
+    MockWebSocket.instances[0].onopen?.(new Event('open'))
+    await waitFor(() => {
+      expect(screen.getByText('● Live')).toBeInTheDocument()
+    })
+  })
+
+  it('WebSocket pushes live events to the dashboard', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ events: [], count: 0 }),
+    })
+    render(<App />)
+    await waitFor(() => {
+      expect(screen.getByText('● Live')).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(screen.queryByText('No telemetry events')).toBeInTheDocument()
+    })
+
+    // Simulate server pushing a new event via WebSocket
+    MockWebSocket.triggerMessage(
+      JSON.stringify({
+        type: 'telemetry',
+        device_id: 'device-77',
+        sequence: 1,
+        payload: { reading_type: 'gps', value: 1.0 },
+        timestamp: '2026-01-01T00:00:00Z',
+        offset: 1,
+      })
+    )
+    await waitFor(() => {
+      expect(screen.getByText('device-77')).toBeInTheDocument()
     })
   })
 })
