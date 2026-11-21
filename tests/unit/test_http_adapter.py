@@ -319,6 +319,37 @@ class WebSocketTest(unittest.TestCase):
             self.assertEqual(msg["device_id"], "device-42")
             self.assertEqual(msg["sequence"], 1)
 
+    def test_websocket_disconnect_cleans_up(self) -> None:
+        from telemetry.infrastructure.json_schema_adapter import (
+            JsonSchemaAdapter as IngestSchema,
+        )
+
+        clock = FixedClock(datetime(2026, 1, 1, tzinfo=timezone.utc))
+        bus = InMemoryTelemetryBus()
+        ingestion = TelemetryIngestion(bus=bus, schema=IngestSchema(), clock=clock)
+        ingest_telemetry = IngestTelemetry(ingestion=ingestion, clock=clock)
+
+        app = create_app(ingest_telemetry, bus=bus)
+        client = TestClient(app)
+
+        # Connect and disconnect — should not raise
+        with client.websocket_connect("/v1/ws/telemetry") as ws:
+            pass
+        # Second connect should work (first was cleaned up)
+        with client.websocket_connect("/v1/ws/telemetry") as ws2:
+            res = client.post(
+                "/v1/telemetry",
+                json={
+                    "device_id": "device-42",
+                    "sequence": 1,
+                    "payload": {"reading_type": "temperature", "value": 22.5},
+                    "timestamp": "2026-01-01T00:00:00+00:00",
+                },
+            )
+            self.assertEqual(res.status_code, 200)
+            msg = ws2.receive_json()
+            self.assertEqual(msg["device_id"], "device-42")
+
 
 class AuthTest(unittest.TestCase):
     def test_api_key_required_when_configured(self) -> None:

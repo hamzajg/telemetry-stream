@@ -37,6 +37,18 @@ ingested, without a page refresh.
   events to the live table without a page reload.
 - Keep polling refresh as a fallback for clients that cannot use WebSocket.
 
+### In-scope paths
+
+- `src/telemetry/infrastructure/http_adapter.py` — WebSocket broadcast from ingest handler
+- `web/src/App.tsx` — frontend WebSocket client, reconnect, incident highlighting
+- `web/src/App.css` — `.ws-status.reconnecting`, `.incident` styles
+- `web/src/App.test.tsx` — WebSocket live-updates tests
+- `tests/unit/test_http_adapter.py` — backend WebSocket disconnect test
+- `evidence/` — tracked evidence bundles committed with each wave
+- `.openharness/evidence/` — scratch evidence bundles captured per wave
+- `src/telemetry/serve.py` — FastAPI entry point wiring all features
+- `web/` — frontend project files (package.json, config, public assets, Vite)
+
 ## Scope (out)
 
 - WebSocket reconnection/backoff strategy beyond a simple reconnect on close.
