@@ -2,11 +2,11 @@
 
 Status: running
 Iterations: 1
-Updated: 2026-11-21T11:06:59Z
+Updated: 2026-11-21T11:14:01Z
 
 | Wave | Status | Branch | PR | Evidence | Updated |
 |------|--------|--------|----|----------|---------|
-| 1 | in-progress | feat/frontend-w1 | — | — | 2026-11-21T11:06:59Z |
+| 1 | done | feat/frontend-w1 | 6358d93 | tests 5/5 vitest pass, vite build green, GET /v1/telemetry added to FastAPI adapter, backend 79/79 tests pass | 2026-11-21T11:14:01Z |
 | 2 | pending | — | — | — | — |
 | 3 | pending | — | — | — | — |
 
@@ -22,3 +22,4 @@ Updated: 2026-11-21T11:06:59Z
 - 2026-11-21T11:04:03Z gate G2 met: SPEC.md contains stack decision D1 (React + TypeScript + Vite) and D2 (polling over HTTP), plus stack decision section
 - 2026-11-21T11:04:17Z gate G1 met: specs/frontend/DECISION-REVIEW.md
 - 2026-11-21T11:06:59Z start wave 1 on feat/frontend-w1
+- 2026-11-21T11:14:01Z complete wave 1 (6358d93): tests 5/5 vitest pass, vite build green, GET /v1/telemetry added to FastAPI adapter, backend 79/79 tests pass

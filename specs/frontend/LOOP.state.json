@@ -2,14 +2,14 @@
   "feature": "frontend",
   "status": "running",
   "iterations": 1,
-  "updated": "2026-11-21T11:06:59Z",
+  "updated": "2026-11-21T11:14:01Z",
   "waves": {
     "1": {
-      "status": "in-progress",
+      "status": "done",
       "branch": "feat/frontend-w1",
-      "pr": "\u2014",
-      "evidence": "\u2014",
-      "updated": "2026-11-21T11:06:59Z"
+      "pr": "6358d93",
+      "evidence": "tests 5/5 vitest pass, vite build green, GET /v1/telemetry added to FastAPI adapter, backend 79/79 tests pass",
+      "updated": "2026-11-21T11:14:01Z"
     }
   },
   "gates": {
@@ -27,6 +27,7 @@
   "events": [
     "2026-11-21T11:04:03Z gate G2 met: SPEC.md contains stack decision D1 (React + TypeScript + Vite) and D2 (polling over HTTP), plus stack decision section",
     "2026-11-21T11:04:17Z gate G1 met: specs/frontend/DECISION-REVIEW.md",
-    "2026-11-21T11:06:59Z start wave 1 on feat/frontend-w1"
+    "2026-11-21T11:06:59Z start wave 1 on feat/frontend-w1",
+    "2026-11-21T11:14:01Z complete wave 1 (6358d93): tests 5/5 vitest pass, vite build green, GET /v1/telemetry added to FastAPI adapter, backend 79/79 tests pass"
   ]
 }
