@@ -1,0 +1,32 @@
+{
+  "feature": "frontend",
+  "status": "running",
+  "iterations": 1,
+  "updated": "2026-11-21T11:06:59Z",
+  "waves": {
+    "1": {
+      "status": "in-progress",
+      "branch": "feat/frontend-w1",
+      "pr": "\u2014",
+      "evidence": "\u2014",
+      "updated": "2026-11-21T11:06:59Z"
+    }
+  },
+  "gates": {
+    "G2": {
+      "status": "met",
+      "evidence": "SPEC.md contains stack decision D1 (React + TypeScript + Vite) and D2 (polling over HTTP), plus stack decision section",
+      "updated": "2026-11-21T11:04:03Z"
+    },
+    "G1": {
+      "status": "met",
+      "evidence": "specs/frontend/DECISION-REVIEW.md",
+      "updated": "2026-11-21T11:04:17Z"
+    }
+  },
+  "events": [
+    "2026-11-21T11:04:03Z gate G2 met: SPEC.md contains stack decision D1 (React + TypeScript + Vite) and D2 (polling over HTTP), plus stack decision section",
+    "2026-11-21T11:04:17Z gate G1 met: specs/frontend/DECISION-REVIEW.md",
+    "2026-11-21T11:06:59Z start wave 1 on feat/frontend-w1"
+  ]
+}

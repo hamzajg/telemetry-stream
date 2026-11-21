@@ -1,0 +1,24 @@
+# Delivery Loop — frontend
+
+Status: running
+Iterations: 1
+Updated: 2026-11-21T11:06:59Z
+
+| Wave | Status | Branch | PR | Evidence | Updated |
+|------|--------|--------|----|----------|---------|
+| 1 | in-progress | feat/frontend-w1 | — | — | 2026-11-21T11:06:59Z |
+| 2 | pending | — | — | — | — |
+| 3 | pending | — | — | — | — |
+
+## Gates
+
+| Gate | Status | Evidence | Updated |
+|------|--------|----------|---------|
+| G1 | met | specs/frontend/DECISION-REVIEW.md | 2026-11-21T11:04:17Z |
+| G2 | met | SPEC.md contains stack decision D1 (React + TypeScript + Vite) and D2 (polling over HTTP), plus stack decision section | 2026-11-21T11:04:03Z |
+
+## Events
+
+- 2026-11-21T11:04:03Z gate G2 met: SPEC.md contains stack decision D1 (React + TypeScript + Vite) and D2 (polling over HTTP), plus stack decision section
+- 2026-11-21T11:04:17Z gate G1 met: specs/frontend/DECISION-REVIEW.md
+- 2026-11-21T11:06:59Z start wave 1 on feat/frontend-w1

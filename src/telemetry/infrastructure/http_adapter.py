@@ -30,6 +30,7 @@ from telemetry.application.ingest import (
     IngestTelemetryRequest,
 )
 from telemetry.domain.exceptions import InvalidSchemaError
+from telemetry.domain.ports import TelemetryBus
 
 
 class IngestEvent(BaseModel):
@@ -39,8 +40,15 @@ class IngestEvent(BaseModel):
     timestamp: str | None = None
 
 
-def create_app(ingest_telemetry: IngestTelemetry) -> Any:
-    """Build the FastAPI app wired to the ingest use case."""
+def create_app(
+    ingest_telemetry: IngestTelemetry,
+    bus: TelemetryBus | None = None,
+) -> Any:
+    """Build the FastAPI app wired to the ingest use case.
+
+    ``bus`` is optional; when provided, GET /v1/telemetry can read back
+    stored events for dashboard display.
+    """
     if FastAPI is None:  # pragma: no cover
         raise RuntimeError("FastAPI is not installed")
 
@@ -66,5 +74,25 @@ def create_app(ingest_telemetry: IngestTelemetry) -> Any:
             "device_id": result.device_id,
             "sequence": result.sequence,
         }
+
+    if bus is not None:
+
+        @app.get("/v1/telemetry")
+        async def list_telemetry(
+            device_id: str | None = None,
+            limit: int = 100,
+        ) -> Dict[str, Any]:
+            events = bus.read(device_id, 1) if device_id is not None else []
+            items = [
+                {
+                    "device_id": e.device_id,
+                    "sequence": e.sequence,
+                    "payload": e.payload,
+                    "timestamp": e.timestamp.isoformat(),
+                    "offset": i + 1,
+                }
+                for i, e in enumerate(events[:limit])
+            ]
+            return {"events": items, "count": len(items)}
 
     return app
