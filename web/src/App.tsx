@@ -30,6 +30,12 @@ interface MetricsResponse {
   consumer_lag_by_device: Record<string, number>
 }
 
+interface SeedResponse {
+  accepted: number
+  rejected: number
+  total: number
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? ''
 
 function fetchEvents(deviceId?: string): Promise<TelemetryResponse> {
@@ -53,6 +59,22 @@ function fetchMetrics(): Promise<MetricsResponse> {
   return fetch(`${API_BASE}/v1/metrics`).then(async (res) => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return res.json() as Promise<MetricsResponse>
+  })
+}
+
+function seedEvents(events: Array<{
+  device_id: string
+  sequence: number
+  payload: Record<string, unknown>
+  timestamp?: string
+}>): Promise<SeedResponse> {
+  return fetch(`${API_BASE}/v1/seed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(events),
+  }).then(async (res) => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return res.json() as Promise<SeedResponse>
   })
 }
 
@@ -81,6 +103,25 @@ function TelemetryDashboard() {
     load()
   }, [load])
 
+  const handleSeed = () => {
+    const now = new Date().toISOString()
+    const demoEvents = [
+      { device_id: 'device-42', sequence: 1, payload: { reading_type: 'temperature', value: 22.5 }, timestamp: now },
+      { device_id: 'device-99', sequence: 1, payload: { reading_type: 'humidity', value: 45.0 }, timestamp: now },
+      { device_id: 'device-77', sequence: 1, payload: { reading_type: 'gps', value: 1.0 }, timestamp: now },
+      { device_id: 'device-42', sequence: 2, payload: { reading_type: 'emergency_incident', value: 9.0, severity: 'high', code: 'FIRE_ALARM' }, timestamp: now },
+    ]
+    setLoading(true)
+    setError(null)
+    seedEvents(demoEvents)
+      .then(() => {
+        setError(null)
+        return load()
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }
+
   const filtered = deviceFilter
     ? events.filter((e) => e.device_id === deviceFilter)
     : events
@@ -102,9 +143,17 @@ function TelemetryDashboard() {
         <button onClick={load} disabled={loading}>
           {loading ? 'Loading…' : 'Refresh'}
         </button>
+        <button onClick={handleSeed} disabled={loading}>
+          Seed demo data
+        </button>
       </div>
 
-      {error && <div className="error">Error: {error}</div>}
+      {error && (
+        <div className="error">
+          Error: {error}
+          <button onClick={load} className="retry">Retry</button>
+        </div>
+      )}
 
       <div className="summary">
         <span>{events.length} event(s)</span>
@@ -180,7 +229,12 @@ function DeviceRegistry() {
         </button>
       </div>
 
-      {error && <div className="error">Error: {error}</div>}
+      {error && (
+        <div className="error">
+          Error: {error}
+          <button onClick={load} className="retry">Retry</button>
+        </div>
+      )}
 
       <div className="summary">
         <span>{activeCount} active device(s)</span>
@@ -249,7 +303,12 @@ function ObservabilityPanel() {
         </button>
       </div>
 
-      {error && <div className="error">Error: {error}</div>}
+      {error && (
+        <div className="error">
+          Error: {error}
+          <button onClick={load} className="retry">Retry</button>
+        </div>
+      )}
 
       {metrics === null && (
         <div className="summary">

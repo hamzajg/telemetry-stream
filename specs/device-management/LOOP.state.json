@@ -1,8 +1,8 @@
 {
   "feature": "device-management",
-  "status": "running",
-  "iterations": 1,
-  "updated": "2026-11-18T09:34:38Z",
+  "status": "done",
+  "iterations": 2,
+  "updated": "2026-11-19T08:35:55Z",
   "waves": {
     "1": {
       "status": "done",
@@ -47,6 +47,7 @@
     "2026-11-18T06:25:31Z complete wave 2 (#4): tests 71/71 green locally; PR #4 opened, depends on PR #3 merged",
     "2026-11-18T06:26:25Z feature validated and shipped",
     "2026-11-18T09:33:20Z start wave 3 on feat/device-management-w3",
-    "2026-11-18T09:34:38Z complete wave 3 (#7): tests 77/77 unit + 9/9 integration green; PR #7 merged to main"
+    "2026-11-18T09:34:38Z complete wave 3 (#7): tests 77/77 unit + 9/9 integration green; PR #7 merged to main",
+    "2026-11-19T08:35:55Z feature validated and shipped"
   ]
 }

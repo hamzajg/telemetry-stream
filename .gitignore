@@ -17,3 +17,6 @@ obj/
 
 # OpenHarness local state (reconstructable)
 .sources-cache/
+
+# Runtime
+.run/

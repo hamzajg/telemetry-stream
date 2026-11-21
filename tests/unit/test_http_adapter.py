@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 
-from telemetry.application.ingest import IngestTelemetryRequest
+from telemetry.application.ingest import IngestTelemetry, IngestTelemetryRequest
 from telemetry.device.application.use_cases import DeviceApplication
 from telemetry.domain.exceptions import InvalidSchemaError
 from telemetry.domain.model import (
@@ -242,6 +242,50 @@ class RejectMetricsTest(unittest.TestCase):
         data = res.json()
         self.assertEqual(data["reject_count"], 1)
         self.assertEqual(data["accept_count"], 0)
+
+
+class SeedTest(unittest.TestCase):
+    def test_seed_accepts_and_rejects_events(self) -> None:
+        from telemetry.infrastructure.json_schema_adapter import (
+            JsonSchemaAdapter as IngestSchema,
+        )
+
+        clock = FixedClock(datetime(2026, 1, 1, tzinfo=timezone.utc))
+        bus = InMemoryTelemetryBus()
+        ingestion = TelemetryIngestion(bus=bus, schema=IngestSchema(), clock=clock)
+        ingest_telemetry = IngestTelemetry(ingestion=ingestion, clock=clock)
+
+        app = create_app(ingest_telemetry, bus=bus)
+        client = TestClient(app)
+
+        res = client.post(
+            "/v1/seed",
+            json=[
+                {
+                    "device_id": "device-42",
+                    "sequence": 1,
+                    "payload": {"reading_type": "temperature", "value": 22.5},
+                    "timestamp": "2026-01-01T00:00:00+00:00",
+                },
+                {
+                    "device_id": "device-99",
+                    "sequence": 1,
+                    "payload": {"reading_type": "humidity", "value": 45.0},
+                    "timestamp": "2026-01-01T00:00:00+00:00",
+                },
+            ],
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["accepted"], 2)
+        self.assertEqual(data["rejected"], 0)
+        self.assertEqual(data["total"], 2)
+
+        # Verify events are readable back
+        res = client.get("/v1/telemetry")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["count"], 2)
 
 
 if __name__ == "__main__":

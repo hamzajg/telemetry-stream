@@ -10,6 +10,7 @@ from typing import Any, Dict
 
 try:  # FastAPI is optional; the domain core does not depend on it
     from fastapi import FastAPI, HTTPException
+    from fastapi.middleware.cors import CORSMiddleware
     from pydantic import BaseModel
 except Exception:  # pragma: no cover - FastAPI may be absent in test envs
     FastAPI = None  # type: ignore
@@ -24,6 +25,12 @@ except Exception:  # pragma: no cover - FastAPI may be absent in test envs
             self.status_code = status_code
             self.detail = detail
 
+    class CORSMiddleware:  # type: ignore
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+
+from datetime import datetime, timezone
 
 from telemetry.application.ingest import (
     IngestTelemetry,
@@ -52,6 +59,13 @@ class DeviceOut(BaseModel):
     device_id: str
     registered_at: str
     active: bool
+
+
+class SeedEvent(BaseModel):
+    device_id: str
+    sequence: int
+    payload: dict
+    timestamp: str | None = None
 
 
 class TelemetryMetrics:
@@ -108,6 +122,13 @@ def create_app(
         raise RuntimeError("FastAPI is not installed")
 
     app = FastAPI(title="Telemetry Ingestion")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     if metrics is None:
         metrics = TelemetryMetrics()
 
@@ -207,6 +228,39 @@ def create_app(
             return {
                 **metrics.snapshot(),
                 "consumer_lag_by_device": lag_by_device,
+            }
+
+    if ingest_telemetry is not None and bus is not None:
+
+        @app.post("/v1/seed")
+        async def seed(events: list[SeedEvent]) -> Dict[str, Any]:
+            """Seed demo telemetry events into the bus.
+
+            Useful for populating the dashboard without calling each
+            /v1/telemetry endpoint individually.
+            """
+            accepted = 0
+            rejected = 0
+            for ev in events:
+                try:
+                    result = ingest_telemetry.execute(
+                        IngestTelemetryRequest(
+                            device_id=ev.device_id,
+                            sequence=ev.sequence,
+                            payload=ev.payload,
+                            timestamp=ev.timestamp,
+                        )
+                    )
+                    if result.accepted:
+                        accepted += 1
+                    else:
+                        rejected += 1
+                except InvalidSchemaError:
+                    rejected += 1
+            return {
+                "accepted": accepted,
+                "rejected": rejected,
+                "total": accepted + rejected,
             }
 
     return app
