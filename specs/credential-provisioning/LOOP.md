@@ -1,9 +1,9 @@
 # Delivery Loop — credential-provisioning
 
-Status: running
+Status: done
 Iterations: 0
 Review: required
-Updated: 2026-11-21T13:28:33Z
+Updated: 2026-11-21T13:31:21Z
 
 | Wave | Status | Branch | PR | Evidence | Updated |
 |------|--------|--------|----|----------|---------|
@@ -23,3 +23,4 @@ Updated: 2026-11-21T13:28:33Z
 - 2026-11-21T13:26:39Z complete wave 1 (31b47d3): 99 tests pass, 7 skipped; writable EnvVarCredentialStore, POST /v1/credentials/provision endpoint, CredentialApplication
 - 2026-11-21T13:26:44Z start wave 2 on feat/credential-provisioning-w2
 - 2026-11-21T13:28:33Z complete wave 2 (4022e27): 103 tests pass, 7 skipped; POST /v1/credentials/revoke, POST /v1/credentials/rotate endpoints; revoke/rotate scenarios c
+- 2026-11-21T13:31:21Z feature validated and shipped
