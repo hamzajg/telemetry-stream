@@ -15,11 +15,11 @@ Updated: 2026-11-21T11:23:18Z
 | Gate | Status | Evidence | Updated |
 |------|--------|----------|---------|
 | G1 | met | specs/frontend/DECISION-REVIEW.md | 2026-11-21T11:04:17Z |
-| G2 | met | SPEC.md contains stack decision D1 (React + TypeScript + Vite) and D2 (polling over HTTP), plus stack decision section | 2026-11-21T11:04:03Z |
+| G2 | met | specs/frontend/SPEC.md (## Decisions D1, D2; Stack decision) | 2026-11-21T11:04:03Z |
 
 ## Events
 
-- 2026-11-21T11:04:03Z gate G2 met: SPEC.md contains stack decision D1 (React + TypeScript + Vite) and D2 (polling over HTTP), plus stack decision section
+- 2026-11-21T11:04:03Z gate G2 met: specs/frontend/SPEC.md (## Decisions D1, D2; Stack decision)
 - 2026-11-21T11:04:17Z gate G1 met: specs/frontend/DECISION-REVIEW.md
 - 2026-11-21T11:06:59Z start wave 1 on feat/frontend-w1
 - 2026-11-21T11:14:01Z complete wave 1 (6358d93): tests 5/5 vitest pass, vite build green, GET /v1/telemetry added to FastAPI adapter, backend 79/79 tests pass
