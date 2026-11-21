@@ -187,7 +187,7 @@ function TelemetryDashboard() {
         </span>
         <input
           type="text"
-          placeholder="Filter by device id"
+          aria-label="Filter by device id"
           value={deviceFilter}
           onChange={(e) => setDeviceFilter(e.target.value)}
         />

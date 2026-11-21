@@ -228,7 +228,7 @@ describe('TelemetryDashboard', () => {
       expect(screen.getByText('device-99')).toBeInTheDocument()
     })
 
-    const input = screen.getByPlaceholderText(/filter by device id/i)
+    const input = screen.getByLabelText(/filter by device id/i)
     fireEvent.change(input, { target: { value: 'device-42' } })
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /refresh/i })).not.toBeDisabled()
