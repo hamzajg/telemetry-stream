@@ -69,7 +69,9 @@ from telemetry.application.ingest import (
     IngestTelemetryRequest,
 )
 from telemetry.device.application.use_cases import (
+    CredentialApplication,
     DeviceApplication,
+    ProvisionCredentialRequest as CredentialProvisionRequest,
     RegisterDeviceRequest as DeviceRegisterRequest,
 )
 from telemetry.domain.exceptions import InvalidSchemaError
@@ -98,6 +100,17 @@ class SeedEvent(BaseModel):
     sequence: int
     payload: dict
     timestamp: str | None = None
+
+
+class ProvisionCredential(BaseModel):
+    device_id: str
+    credential_id: str
+
+
+class ProvisionCredentialOut(BaseModel):
+    provisioned: bool
+    device_id: str
+    credential_id: str
 
 
 class TelemetryMetrics:
@@ -183,6 +196,7 @@ def create_app(
     ingest_telemetry: IngestTelemetry,
     bus: TelemetryBus | None = None,
     device_app: DeviceApplication | None = None,
+    credential_app: CredentialApplication | None = None,
     metrics: TelemetryMetrics | None = None,
 ) -> Any:
     """Build the FastAPI app wired to the ingest use case.
@@ -192,6 +206,9 @@ def create_app(
 
     ``device_app`` is optional; when provided, device management endpoints
     (GET /v1/devices, POST /v1/devices/register) are exposed.
+
+    ``credential_app`` is optional; when provided, credential management
+    endpoints (POST /v1/credentials/provision) are exposed.
 
     ``metrics`` is optional; when provided, GET /v1/metrics exposes
     accept/reject counters and consumer lag.
@@ -342,6 +359,25 @@ def create_app(
                 "device_id": result.device_id,
                 "active": result.active,
             }
+
+    if credential_app is not None:
+
+        @app.post("/v1/credentials/provision")
+        async def provision_credential(req: ProvisionCredential) -> ProvisionCredentialOut:
+            try:
+                result = credential_app.provision_credential(
+                    CredentialProvisionRequest(
+                        device_id=req.device_id,
+                        credential_id=req.credential_id,
+                    )
+                )
+            except Exception as exc:  # pragma: no cover - adapter boundary
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            return ProvisionCredentialOut(
+                provisioned=result.provisioned,
+                device_id=result.device_id,
+                credential_id=result.credential_id,
+            )
 
     if metrics is not None:
 

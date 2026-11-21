@@ -21,7 +21,10 @@ import urllib.request
 from datetime import datetime, timezone
 
 from telemetry.application.ingest import IngestTelemetry
-from telemetry.device.application.use_cases import DeviceApplication
+from telemetry.device.application.use_cases import (
+    CredentialApplication,
+    DeviceApplication,
+)
 from telemetry.domain.model import TelemetryIngestion
 from telemetry.domain.ports import Clock, TelemetryBus
 from telemetry.infrastructure.http_adapter import TelemetryMetrics, create_app
@@ -66,6 +69,9 @@ def build_stack(lakehouse_root: str = "/tmp/telemetry-lakehouse"):
         registry=registry, credentials=credentials, clock=clock
     )
     device_app = DeviceApplication(device_management=device_management)
+    credential_app = CredentialApplication(
+        device_management=device_management
+    )
 
     projection = InMemoryTelemetryProjection()
     stream_schema = StreamSchema()
@@ -85,6 +91,7 @@ def build_stack(lakehouse_root: str = "/tmp/telemetry-lakehouse"):
         ingest_telemetry=ingest_telemetry,
         bus=bus,
         device_app=device_app,
+        credential_app=credential_app,
         metrics=metrics,
     )
 
@@ -95,6 +102,7 @@ def build_stack(lakehouse_root: str = "/tmp/telemetry-lakehouse"):
         "ingestion": ingestion,
         "ingest_telemetry": ingest_telemetry,
         "device_app": device_app,
+        "credential_app": credential_app,
         "device_management": device_management,
         "projection": projection,
         "project_telemetry": project_telemetry,

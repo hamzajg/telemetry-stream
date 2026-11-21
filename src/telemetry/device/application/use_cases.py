@@ -182,6 +182,21 @@ class CredentialApplication:
     def __init__(self, device_management: DeviceManagement) -> None:
         self._dm = device_management
 
+    def provision_credential(
+        self, request: ProvisionCredentialRequest
+    ) -> ProvisionCredentialResponse:
+        result = self._dm.provision_credential(
+            ProvisionCredentialCommand(
+                device_id=request.device_id,
+                credential_id=request.credential_id,
+            )
+        )
+        return ProvisionCredentialResponse(
+            provisioned=result.provisioned,
+            device_id=result.device_id,
+            credential_id=result.credential_id,
+        )
+
     def revoke_credential(
         self, request: RevokeCredentialRequest
     ) -> RevokeCredentialResponse:
