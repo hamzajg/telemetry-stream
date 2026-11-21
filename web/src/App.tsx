@@ -24,6 +24,12 @@ interface DevicesResponse {
   devices: Device[]
 }
 
+interface MetricsResponse {
+  accept_count: number
+  reject_count: number
+  consumer_lag_by_device: Record<string, number>
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? ''
 
 function fetchEvents(deviceId?: string): Promise<TelemetryResponse> {
@@ -40,6 +46,13 @@ function fetchDevices(): Promise<DevicesResponse> {
   return fetch(`${API_BASE}/v1/devices`).then(async (res) => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return res.json() as Promise<DevicesResponse>
+  })
+}
+
+function fetchMetrics(): Promise<MetricsResponse> {
+  return fetch(`${API_BASE}/v1/metrics`).then(async (res) => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return res.json() as Promise<MetricsResponse>
   })
 }
 
@@ -203,8 +216,84 @@ function DeviceRegistry() {
   )
 }
 
+function ObservabilityPanel() {
+  const [metrics, setMetrics] = useState<MetricsResponse | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    fetchMetrics()
+      .then((data) => setMetrics(data))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const lagEntries = metrics ? Object.entries(metrics.consumer_lag_by_device) : []
+
+  return (
+    <div className="dashboard">
+      <header>
+        <h1>Observability</h1>
+        <p>Ingestion health: accept/reject counters and consumer lag</p>
+      </header>
+
+      <div className="toolbar">
+        <button onClick={load} disabled={loading}>
+          {loading ? 'Loading…' : 'Refresh'}
+        </button>
+      </div>
+
+      {error && <div className="error">Error: {error}</div>}
+
+      {metrics === null && (
+        <div className="summary">
+          <span>Loading metrics…</span>
+        </div>
+      )}
+
+      {metrics !== null && (
+        <>
+          <div className="summary">
+            <span className="metric">Accepted: {metrics.accept_count}</span>
+            <span className="metric">Rejected: {metrics.reject_count}</span>
+            <span className="metric">Total: {metrics.accept_count + metrics.reject_count}</span>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Device</th>
+                <th>Consumer Lag</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lagEntries.length === 0 && (
+                <tr>
+                  <td colSpan={2}>No consumer lag data</td>
+                </tr>
+              )}
+              {lagEntries.map(([deviceId, lag]) => (
+                <tr key={deviceId} className={lag > 0 ? 'lagging' : ''}>
+                  <td>{deviceId}</td>
+                  <td>{lag}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function App() {
-  const [view, setView] = useState<'telemetry' | 'devices'>('telemetry')
+  const [view, setView] = useState<'telemetry' | 'devices' | 'observability'>('telemetry')
 
   return (
     <div className="app">
@@ -221,8 +310,14 @@ export default function App() {
         >
           Devices
         </button>
+        <button
+          onClick={() => setView('observability')}
+          className={view === 'observability' ? 'active' : ''}
+        >
+          Observability
+        </button>
       </nav>
-      {view === 'telemetry' ? <TelemetryDashboard /> : <DeviceRegistry />}
+      {view === 'telemetry' ? <TelemetryDashboard /> : view === 'devices' ? <DeviceRegistry /> : <ObservabilityPanel />}
     </div>
   )
 }

@@ -126,3 +126,18 @@ tr.incident td:first-child {
 tr.inactive {
   opacity: 0.5;
 }
+
+.metric {
+  margin-right: 16px;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+tr.lagging {
+  background: #fef2f2;
+  border-left: 4px solid #dc2626;
+}
+
+tr.lagging td:first-child {
+  border-left: none;
+}

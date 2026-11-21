@@ -54,10 +54,44 @@ class DeviceOut(BaseModel):
     active: bool
 
 
+class TelemetryMetrics:
+    """Simple observability counters for the ingestion adapter.
+
+    Tracks accept/reject counts and per-device consumer lag.
+    """
+
+    def __init__(self) -> None:
+        self.accept_count = 0
+        self.reject_count = 0
+        self._consumed_offset: dict[str, int] = {}
+
+    def record_accept(self) -> None:
+        self.accept_count += 1
+
+    def record_reject(self) -> None:
+        self.reject_count += 1
+
+    def mark_consumed(self, device_id: str, offset: int) -> None:
+        self._consumed_offset[device_id] = max(
+            self._consumed_offset.get(device_id, 0), offset
+        )
+
+    def consumer_lag(self, device_id: str, latest_offset: int) -> int:
+        consumed = self._consumed_offset.get(device_id, 0)
+        return max(0, latest_offset - consumed)
+
+    def snapshot(self) -> dict[str, Any]:
+        return {
+            "accept_count": self.accept_count,
+            "reject_count": self.reject_count,
+        }
+
+
 def create_app(
     ingest_telemetry: IngestTelemetry,
     bus: TelemetryBus | None = None,
     device_app: DeviceApplication | None = None,
+    metrics: TelemetryMetrics | None = None,
 ) -> Any:
     """Build the FastAPI app wired to the ingest use case.
 
@@ -66,11 +100,16 @@ def create_app(
 
     ``device_app`` is optional; when provided, device management endpoints
     (GET /v1/devices, POST /v1/devices/register) are exposed.
+
+    ``metrics`` is optional; when provided, GET /v1/metrics exposes
+    accept/reject counters and consumer lag.
     """
     if FastAPI is None:  # pragma: no cover
         raise RuntimeError("FastAPI is not installed")
 
     app = FastAPI(title="Telemetry Ingestion")
+    if metrics is None:
+        metrics = TelemetryMetrics()
 
     @app.post("/v1/telemetry")
     async def ingest(event: IngestEvent) -> Dict[str, Any]:
@@ -84,7 +123,9 @@ def create_app(
                 )
             )
         except InvalidSchemaError as exc:
+            metrics.record_reject()
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        metrics.record_accept()
         return {
             "accepted": result.accepted,
             "event_id": result.event_id,
@@ -111,6 +152,8 @@ def create_app(
                 }
                 for i, e in enumerate(events[:limit])
             ]
+            if device_id is not None and events:
+                metrics.mark_consumed(device_id, len(events))
             return {"events": items, "count": len(items)}
 
     if device_app is not None:
@@ -142,6 +185,25 @@ def create_app(
                 "registered": result.registered,
                 "device_id": result.device_id,
                 "active": result.active,
+            }
+
+    if metrics is not None:
+
+        @app.get("/v1/metrics")
+        async def get_metrics() -> Dict[str, Any]:
+            lag_by_device: dict[str, int] = {}
+            if bus is not None:
+                # Read all devices' events to compute latest offset per device
+                # For simplicity, compute lag for devices that have been consumed
+                for device_id in metrics._consumed_offset:
+                    events = bus.read(device_id, 1)
+                    latest = len(events)
+                    lag_by_device[device_id] = metrics.consumer_lag(
+                        device_id, latest
+                    )
+            return {
+                **metrics.snapshot(),
+                "consumer_lag_by_device": lag_by_device,
             }
 
     return app

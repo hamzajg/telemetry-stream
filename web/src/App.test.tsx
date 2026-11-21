@@ -29,6 +29,16 @@ beforeEach(() => {
         }),
       }
     }
+    if (String(url).includes('/v1/metrics')) {
+      return {
+        ok: true,
+        json: async () => ({
+          accept_count: 10,
+          reject_count: 2,
+          consumer_lag_by_device: { 'device-42': 3, 'device-99': 0 },
+        }),
+      }
+    }
     return {
       ok: true,
       json: async () => ({ events: [], count: 0 }),
@@ -233,5 +243,51 @@ describe('DeviceRegistry', () => {
     })
     const row = screen.getByText('device-99').closest('tr')
     expect(row).toHaveClass('inactive')
+  })
+})
+
+describe('ObservabilityPanel', () => {
+  it('renders observability header and metrics', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: /observability/i }))
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /observability/i })).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(screen.getByText('Accepted: 10')).toBeInTheDocument()
+      expect(screen.getByText('Rejected: 2')).toBeInTheDocument()
+    })
+  })
+
+  it('shows consumer lag by device', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: /observability/i }))
+    await waitFor(() => {
+      expect(screen.getByText('device-42')).toBeInTheDocument()
+      expect(screen.getByText('3')).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(screen.getByText('device-99')).toBeInTheDocument()
+    })
+  })
+
+  it('shows zero lag without lagging class', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: /observability/i }))
+    await waitFor(() => {
+      expect(screen.getByText('device-99')).toBeInTheDocument()
+    })
+    const row = screen.getByText('device-99').closest('tr')
+    expect(row).not.toHaveClass('lagging')
+  })
+
+  it('shows lagging class for positive lag', async () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: /observability/i }))
+    await waitFor(() => {
+      expect(screen.getByText('device-42')).toBeInTheDocument()
+    })
+    const row = screen.getByText('device-42').closest('tr')
+    expect(row).toHaveClass('lagging')
   })
 })

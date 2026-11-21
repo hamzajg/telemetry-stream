@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from telemetry.application.ingest import IngestTelemetryRequest
 from telemetry.device.application.use_cases import DeviceApplication
+from telemetry.domain.exceptions import InvalidSchemaError
 from telemetry.domain.model import (
     IngestResult,
     IngestTelemetryCommand,
@@ -17,7 +18,10 @@ from telemetry.domain.model import (
 )
 from telemetry.domain.ports import Clock, TelemetryBus
 from telemetry.infrastructure.fixed_clock import FixedClock
-from telemetry.infrastructure.http_adapter import create_app
+from telemetry.infrastructure.http_adapter import (
+    TelemetryMetrics,
+    create_app,
+)
 from telemetry.infrastructure.in_memory_bus import InMemoryTelemetryBus
 
 
@@ -124,6 +128,76 @@ class HttpAdapterTest(unittest.TestCase):
         data = res.json()
         self.assertTrue(data["registered"])
         self.assertEqual(data["device_id"], "device-new")
+
+
+class MetricsTest(unittest.TestCase):
+    def test_snapshot_returns_counters(self) -> None:
+        metrics = TelemetryMetrics()
+        metrics.record_accept()
+        metrics.record_accept()
+        metrics.record_reject()
+        snap = metrics.snapshot()
+        self.assertEqual(snap["accept_count"], 2)
+        self.assertEqual(snap["reject_count"], 1)
+
+    def test_consumer_lag_zero_when_not_consumed(self) -> None:
+        metrics = TelemetryMetrics()
+        self.assertEqual(metrics.consumer_lag("device-42", 5), 5)
+
+    def test_consumer_lag_after_mark_consumed(self) -> None:
+        metrics = TelemetryMetrics()
+        metrics.mark_consumed("device-42", 3)
+        self.assertEqual(metrics.consumer_lag("device-42", 5), 2)
+        self.assertEqual(metrics.consumer_lag("device-42", 2), 0)
+
+    def test_get_metrics_returns_counters_and_lag(self) -> None:
+        ingest = _FakeIngest()
+        bus = InMemoryTelemetryBus()
+        event = TelemetryEvent(
+            device_id="device-42",
+            sequence=1,
+            payload={"reading_type": "gps"},
+            timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+        bus.append("device-42", event)
+
+        metrics = TelemetryMetrics()
+        metrics.record_accept()
+        metrics.mark_consumed("device-42", 0)
+
+        app = create_app(ingest, bus=bus, metrics=metrics)
+        client = TestClient(app)
+
+        res = client.get("/v1/metrics")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["accept_count"], 1)
+        self.assertEqual(data["reject_count"], 0)
+        self.assertIn("device-42", data["consumer_lag_by_device"])
+
+
+class RejectMetricsTest(unittest.TestCase):
+    def test_reject_increments_reject_count(self) -> None:
+        class _RejectIngest:
+            def execute(self, request: IngestTelemetryCommand) -> IngestResult:
+                raise InvalidSchemaError("bad payload")
+
+        ingest = _RejectIngest()
+        bus = InMemoryTelemetryBus()
+        metrics = TelemetryMetrics()
+        app = create_app(ingest, bus=bus, metrics=metrics)
+        client = TestClient(app)
+
+        res = client.post(
+            "/v1/telemetry",
+            json={"device_id": "device-42", "sequence": 1, "payload": {"reading_type": "gps"}},
+        )
+        self.assertEqual(res.status_code, 400)
+
+        res = client.get("/v1/metrics")
+        data = res.json()
+        self.assertEqual(data["reject_count"], 1)
+        self.assertEqual(data["accept_count"], 0)
 
 
 if __name__ == "__main__":
