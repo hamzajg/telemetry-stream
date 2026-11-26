@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Python tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install
+        run: pip install -e ".[dev,kafka,http]"
+
+      # The integration suites drive a real bus at localhost:9092 and create
+      # topics through `docker exec telemetry-redpanda`, so the container must
+      # carry that name. Without it those tests skip themselves.
+      - name: Start Redpanda
+        run: |
+          docker run -d --name telemetry-redpanda -p 9092:9092 \
+            redpandadata/redpanda:v22.2.1 \
+            redpanda start --overprovisioned --smp 1 --memory 1G \
+            --reserve-memory 0M --node-id 0 --check=false
+          for attempt in $(seq 1 30); do
+            if docker exec telemetry-redpanda rpk topic list >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Redpanda did not become ready" >&2
+          docker logs telemetry-redpanda >&2
+          exit 1
+
+      - name: Test
+        run: python -m pytest -q
+
+  web:
+    name: Web (React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
