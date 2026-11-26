@@ -2,6 +2,7 @@
 
 | Feature | Stories | Scenarios | Waves | Planned | Validated |
 |---------|---------|-----------|-------|---------|-----------|
+| credential-provisioning (`credential-provisioning/`) | 4 | 4 | 2 | yes | yes |
 | device-management (`device-management/`) | 6 | 6 | 3 | yes | yes |
 | frontend (`frontend/`) | 5 | 5 | 3 | yes | yes |
 | lakehouse-storage (`lakehouse-storage/`) | 5 | 4 | 3 | yes | yes |
